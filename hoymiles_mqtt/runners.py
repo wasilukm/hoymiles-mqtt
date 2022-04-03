@@ -25,6 +25,7 @@ class HoymilesQueryJob:
                 if not self._mqtt_configured:
                     for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
                         self._mqtt_publisher.publish(topic=topic, payload=payload)
+                    self._mqtt_configured = True
                 for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
                     self._mqtt_publisher.publish(topic=topic, payload=payload)
             finally:
