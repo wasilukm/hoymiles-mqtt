@@ -6,6 +6,8 @@ from hoymiles_modbus.client import HoymilesModbusTCP
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 
+RESET_HOUR = 23
+
 
 class HoymilesQueryJob:
 
@@ -20,6 +22,8 @@ class HoymilesQueryJob:
     def execute(self):
         is_acquired = self._lock.acquire(blocking=False)
         if is_acquired:
+            if time.localtime().tm_hour == RESET_HOUR:
+                self._mqtt_builder.clear_production_today()
             try:
                 plant_data = self._modbus_client.plant_data
                 if not self._mqtt_configured:

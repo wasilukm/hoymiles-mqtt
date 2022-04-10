@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -24,6 +24,8 @@ UNIT_CELSIUS = '°C'
 UNIT_WATS = 'W'
 UNIT_WATS_PER_HOUR = 'Wh'
 
+ZERO = 0
+
 
 @dataclass
 class EntityDescription:
@@ -31,6 +33,7 @@ class EntityDescription:
     device_class: Optional[str] = None
     unit: Optional[str] = None
     state_class: Optional[str] = None
+    ignored_value: Optional[Any] = None
 
 
 MicroinverterEntities = {
@@ -66,20 +69,23 @@ MicroinverterEntities = {
 DtuEntities = {
     'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
     'today_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL
+        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL, ignored_value=ZERO
     ),
     'total_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL
+        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL, ignored_value=ZERO
     ),
     'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR),
 }
 
 
 class HassMqtt:
-    def __init__(self, hide_microinverters=False):
-        self._hide_microinverters = hide_microinverters
-        self._state_topics = {}
-        self._config_topics = {}
+    def __init__(self, hide_microinverters: bool = False, post_process: bool = True):
+        self._hide_microinverters: bool = hide_microinverters
+        self._state_topics: Dict = {}
+        self._config_topics: Dict = {}
+        self._post_process: bool = post_process
+        self._production_today_cache: Dict[str, int] = {}
+        self._production_total_cache: Dict[str, int] = {}
 
     def _get_config_topic(self, platform: str, device_serial: str, entity_name):
         return f"homeassistant/{platform}/{device_serial}/{entity_name}/config"
@@ -111,6 +117,9 @@ class HassMqtt:
             config_topic = self._get_config_topic(entity_definition.platform, device_serial_number, entity_name)
             yield config_topic, json.dumps(config_payload)
 
+    def clear_production_today(self):
+        self._production_today_cache = {}
+
     def get_configs(self, plant_data: PlantData):
         for topic, payload in self._get_config_payloads('DTU', plant_data.dtu, DtuEntities):
             yield topic, payload
@@ -123,13 +132,39 @@ class HassMqtt:
 
     def _get_state(self, device_serial: str, entity_definitions: Dict[str, EntityDescription], entity_data):
         values = {}
-        for entity_name, _ in entity_definitions.items():
-            values[entity_name] = str(getattr(entity_data, entity_name))
-            payload = json.dumps(values)
-            state_topic = self._get_state_topic(device_serial)
+        for entity_name, description in entity_definitions.items():
+            value = getattr(entity_data, entity_name)
+            if description.ignored_value is not None and value == description.ignored_value:
+                continue
+            values[entity_name] = str(value)
+        payload = json.dumps(values)
+        state_topic = self._get_state_topic(device_serial)
         return state_topic, payload
 
+    def _update_cache(self, plant_data: PlantData):
+        for microinverter in plant_data.microinverter_data:
+            if microinverter.serial_number not in self._production_today_cache:
+                self._production_today_cache[microinverter.serial_number] = ZERO
+            if microinverter.serial_number not in self._production_total_cache:
+                self._production_total_cache[microinverter.serial_number] = ZERO
+            if microinverter.link_status:
+                self._production_today_cache[microinverter.serial_number] = microinverter.today_production
+                self._production_total_cache[microinverter.serial_number] = microinverter.total_production
+
+    def _process_plant_data(self, plant_data: PlantData):
+        self._update_cache(plant_data)
+        production_today = ZERO
+        production_total = ZERO
+        if self._production_today_cache and ZERO not in self._production_today_cache.values():
+            production_today = sum(self._production_today_cache.values())
+        if self._production_total_cache and ZERO not in self._production_total_cache.values():
+            production_total = sum(self._production_total_cache.values())
+        plant_data.today_production = production_today
+        plant_data.total_production = production_total
+
     def get_states(self, plant_data: PlantData):
+        if self._post_process:
+            self._process_plant_data(plant_data)
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
         if not self._hide_microinverters:
             for microinverter_data in plant_data.microinverter_data:
