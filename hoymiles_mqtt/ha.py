@@ -126,7 +126,7 @@ class HassMqtt:
         if not self._hide_microinverters:
             for microinverter_data in plant_data.microinverter_data:
                 for topic, payload in self._get_config_payloads(
-                    'Microinverter', microinverter_data.serial_number, MicroinverterEntities
+                    'inverter', microinverter_data.serial_number, MicroinverterEntities
                 ):
                     yield topic, payload
 
