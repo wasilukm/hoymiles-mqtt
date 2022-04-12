@@ -9,5 +9,12 @@ class MqttPublisher:
         if mqtt_user and mqtt_password:
             self._auth = {'username': mqtt_user, 'password': mqtt_password}
 
-    def publish(self, topic: str, payload: str) -> None:
-        publish_single(topic=topic, payload=payload, hostname=self._mqtt_broker, port=self._mqtt_port, auth=self._auth)
+    def publish(self, topic: str, payload: str, retain: bool = False) -> None:
+        publish_single(
+            topic=topic,
+            payload=payload,
+            hostname=self._mqtt_broker,
+            port=self._mqtt_port,
+            auth=self._auth,
+            retain=retain,
+        )
