@@ -15,7 +15,7 @@ DEVICE_CLASS_ENERGY = 'energy'
 DEVICE_CLASS_TEMPERATURE = 'temperature'
 
 STATE_CLASS_MEASUREMENT = 'measurement'
-STATE_CLASS_TOTAL = 'total'
+STATE_CLASS_TOTAL_INCREASING = 'total_increasing'
 
 UNIT_VOLTS = 'V'
 UNIT_AMPERES = 'A'
@@ -52,10 +52,10 @@ MicroinverterEntities = {
     ),
     'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
     'today_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL
+        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL_INCREASING
     ),
     'total_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL
+        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL_INCREASING
     ),
     'temperature': EntityDescription(
         device_class=DEVICE_CLASS_TEMPERATURE, unit=UNIT_CELSIUS, state_class=STATE_CLASS_MEASUREMENT
@@ -69,10 +69,16 @@ MicroinverterEntities = {
 DtuEntities = {
     'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
     'today_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL, ignored_value=ZERO
+        device_class=DEVICE_CLASS_ENERGY,
+        unit=UNIT_WATS_PER_HOUR,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
+        ignored_value=ZERO,
     ),
     'total_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL, ignored_value=ZERO
+        device_class=DEVICE_CLASS_ENERGY,
+        unit=UNIT_WATS_PER_HOUR,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
+        ignored_value=ZERO,
     ),
     'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR),
 }
