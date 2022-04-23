@@ -247,7 +247,7 @@ dev = ["twine", "markdown", "flake8", "wheel"]
 
 [[package]]
 name = "hoymiles-modbus"
-version = "0.2.0"
+version = "0.2.1"
 description = "Gather data from Hoymiles microinverters."
 category = "main"
 optional = false
@@ -259,7 +259,7 @@ plum-py = ">=0.7.4,<0.8.0"
 pymodbus = ">=2.5.3,<3.0.0"
 
 [package.extras]
-test = ["black (>=21.5b2,<22.0)", "flake8 (>=3.9.2,<4.0.0)", "flake8-docstrings (>=1.6.0,<2.0.0)", "isort (>=5.8.0,<6.0.0)", "mypy (>=0.900,<0.901)", "pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<3.0.0)"]
+test = ["black (==22.3.0)", "flake8 (>=3.9.2,<4.0.0)", "flake8-docstrings (>=1.6.0,<2.0.0)", "isort (>=5.8.0,<6.0.0)", "mypy (>=0.900,<0.901)", "pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<3.0.0)"]
 dev = ["bump2version (>=1.0.1,<2.0.0)", "pip (>=20.3.1,<21.0.0)", "pre-commit (>=2.12.0,<3.0.0)", "toml (>=0.10.2,<0.11.0)", "tox (>=3.20.1,<4.0.0)", "twine (>=3.3.0,<4.0.0)", "virtualenv (>=20.2.2,<21.0.0)"]
 doc = ["mkdocs (>=1.2.3,<2.0.0)", "mkdocs-autorefs (>=0.3.1)", "mkdocs-include-markdown-plugin (>=1.0.0,<2.0.0)", "mkdocs-material (>=8.2.5,<9.0.0)", "mkdocstrings (>=0.18.0,<0.19.0)"]
 
@@ -1074,7 +1074,7 @@ test = ["pytest", "black", "isort", "mypy", "flake8", "flake8-docstrings", "pyte
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2,<4.0"
-content-hash = "744cada189ab0e0dbddfc59f1d8dd3af4c2e45352e4206cbb4f2e991e908a730"
+content-hash = "a6ddee9ff26a06eda6925b7a219468113417dd061cdc6508983dc43f58265bca"
 
 [metadata.files]
 atomicwrites = [
@@ -1273,8 +1273,8 @@ ghp-import = [
     {file = "ghp_import-2.0.2-py3-none-any.whl", hash = "sha256:5f8962b30b20652cdffa9c5a9812f7de6bcb56ec475acac579807719bf242c46"},
 ]
 hoymiles-modbus = [
-    {file = "hoymiles_modbus-0.2.0-py3-none-any.whl", hash = "sha256:9f36162454ee96686c6b9cd7589ca608d1518219569f5cef449a1a56ba9b9403"},
-    {file = "hoymiles_modbus-0.2.0.tar.gz", hash = "sha256:89985ccc6661b857ff46a66d24f5ab78fa2d48707e5b260e232e8a79c9c5f898"},
+    {file = "hoymiles_modbus-0.2.1-py3-none-any.whl", hash = "sha256:21c8c339b867b0bd4852ab11e089340b360b9a635f849a1124c92f16e0af5581"},
+    {file = "hoymiles_modbus-0.2.1.tar.gz", hash = "sha256:dc331c07daea0dddac7e21378de3066a8758c3a60705a9161158dbbc1bfa0faa"},
 ]
 identify = [
     {file = "identify-2.4.4-py2.py3-none-any.whl", hash = "sha256:aa68609c7454dbcaae60a01ff6b8df1de9b39fe6e50b1f6107ec81dcda624aa6"},
