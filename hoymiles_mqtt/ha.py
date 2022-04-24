@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -85,13 +85,16 @@ DtuEntities = {
 
 
 class HassMqtt:
-    def __init__(self, hide_microinverters: bool = False, post_process: bool = True):
-        self._hide_microinverters: bool = hide_microinverters
+    def __init__(self, mi_entities: List[str], post_process: bool = True):
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
         self._production_today_cache: Dict[str, int] = {}
         self._production_total_cache: Dict[str, int] = {}
+        self._mi_entities: Dict[str, EntityDescription] = {}
+        for entity_name, description in MicroinverterEntities.items():
+            if entity_name in mi_entities:
+                self._mi_entities[entity_name] = description
 
     def _get_config_topic(self, platform: str, device_serial: str, entity_name):
         return f"homeassistant/{platform}/{device_serial}/{entity_name}/config"
@@ -129,12 +132,11 @@ class HassMqtt:
     def get_configs(self, plant_data: PlantData):
         for topic, payload in self._get_config_payloads('DTU', plant_data.dtu, DtuEntities):
             yield topic, payload
-        if not self._hide_microinverters:
-            for microinverter_data in plant_data.microinverter_data:
-                for topic, payload in self._get_config_payloads(
-                    'inverter', microinverter_data.serial_number, MicroinverterEntities
-                ):
-                    yield topic, payload
+        for microinverter_data in plant_data.microinverter_data:
+            for topic, payload in self._get_config_payloads(
+                'inverter', microinverter_data.serial_number, self._mi_entities
+            ):
+                yield topic, payload
 
     def _get_state(self, device_serial: str, entity_definitions: Dict[str, EntityDescription], entity_data):
         values = {}
@@ -172,6 +174,5 @@ class HassMqtt:
         if self._post_process:
             self._process_plant_data(plant_data)
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
-        if not self._hide_microinverters:
-            for microinverter_data in plant_data.microinverter_data:
-                yield self._get_state(microinverter_data.serial_number, MicroinverterEntities, microinverter_data)
+        for microinverter_data in plant_data.microinverter_data:
+            yield self._get_state(microinverter_data.serial_number, self._mi_entities, microinverter_data)

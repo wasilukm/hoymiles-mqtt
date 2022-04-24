@@ -41,18 +41,33 @@ def _parse_args() -> argparse.Namespace:
         env_var='MICROINVERTER_TYPE',
     )
     cfg_parser.add(
-        '--hide-microinverters',
+        '--mi-entities',
         required=False,
-        type=bool,
-        default=False,
-        env_var='HIDE_MICROINVERTERS',
-        help='If true then detailed microinverter date will not be send to MQTT broker',
+        nargs="+",
+        action='append',
+        default=[
+            'port_number',
+            'pv_voltage',
+            'pv_current',
+            'grid_voltage',
+            'grid_frequency',
+            'pv_power',
+            'today_production',
+            'total_production',
+            'temperature',
+            'operating_status',
+            'alarm_code',
+            'alarm_count',
+            'link_status',
+        ],
+        env_var='MI_ENTITIES',
+        help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
     )
     return cfg_parser.parse_args()
 
 
 options = _parse_args()
-mqtt_builder = HassMqtt(hide_microinverters=options.hide_microinverters)
+mqtt_builder = HassMqtt(mi_entities=options.mi_entities)
 microinverter_type = getattr(MicroinverterType, options.microinverter_type)
 modbus_client = HoymilesModbusTCP(host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type)
 mqtt_publisher = MqttPublisher(
