@@ -13,9 +13,25 @@ DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
 
+KNOWN_ENTITIES = [
+    'port_number',
+    'pv_voltage',
+    'pv_current',
+    'grid_voltage',
+    'grid_frequency',
+    'pv_power',
+    'today_production',
+    'total_production',
+    'temperature',
+    'operating_status',
+    'alarm_code',
+    'alarm_count',
+    'link_status',
+]
+
 
 def _parse_args() -> argparse.Namespace:
-    cfg_parser = configargparse.ArgParser()
+    cfg_parser = configargparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     cfg_parser.add('-c', '--config', required=False, type=str, is_config_file=True, help='Config file path')
     cfg_parser.add('--mqtt-broker', required=True, type=str, env_var='MQTT_BROKER', help='Address of MQTT broker')
     cfg_parser.add(
@@ -24,7 +40,7 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_MQTT_PORT,
         type=int,
         env_var='MQTT_PORT',
-        help=f'MQTT broker port (default: {DEFAULT_MQTT_PORT}',
+        help='MQTT broker port',
     )
     cfg_parser.add('--mqtt-user', required=False, type=str, env_var='MQTT_USER', help='User name for MQTT broker')
     cfg_parser.add('--mqtt-password', required=False, type=str, env_var='MQTT_PASSWORD', help='Password to MQTT broker')
@@ -40,7 +56,14 @@ def _parse_args() -> argparse.Namespace:
         env_var='MODBUS_UNIT_ID',
         help='Modbus Unit ID',
     )
-    cfg_parser.add('--query-period', required=False, type=int, default=DEFAULT_QUERY_PERIOD_SEC, env_var='QUERY_PERIOD')
+    cfg_parser.add(
+        '--query-period',
+        required=False,
+        type=int,
+        default=DEFAULT_QUERY_PERIOD_SEC,
+        env_var='QUERY_PERIOD',
+        help='How often (in seconds) DTU shall be queried.',
+    )
     cfg_parser.add(
         '--microinverter-type',
         required=False,
@@ -48,27 +71,14 @@ def _parse_args() -> argparse.Namespace:
         choices=['MI', 'HM'],
         default='MI',
         env_var='MICROINVERTER_TYPE',
+        help='Type od microinverters in the installation. Mixed types are not supported.',
     )
     cfg_parser.add(
         '--mi-entities',
         required=False,
         nargs="+",
         action='append',
-        default=[
-            'port_number',
-            'pv_voltage',
-            'pv_current',
-            'grid_voltage',
-            'grid_frequency',
-            'pv_power',
-            'today_production',
-            'total_production',
-            'temperature',
-            'operating_status',
-            'alarm_code',
-            'alarm_count',
-            'link_status',
-        ],
+        default=KNOWN_ENTITIES,
         env_var='MI_ENTITIES',
         help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
     )
