@@ -11,6 +11,7 @@ from hoymiles_mqtt.runners import HoymilesQueryJob, run_periodic_job
 DEFAULT_MQTT_PORT = 1883
 DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
+DEFAULT_MODBUS_UNIT_ID = 1
 
 
 def _parse_args() -> argparse.Namespace:
@@ -30,6 +31,14 @@ def _parse_args() -> argparse.Namespace:
     cfg_parser.add('--dtu-host', required=True, type=str, env_var='DTU_HOST', help='Address of Hoymiles DTU')
     cfg_parser.add(
         '--dtu-port', required=False, type=int, default=DEFAULT_MODBUS_PORT, env_var='DTU_PORT', help='DTU modbus port'
+    )
+    cfg_parser.add(
+        '--modbus-unit-id',
+        required=False,
+        type=int,
+        default=DEFAULT_MODBUS_UNIT_ID,
+        env_var='MODBUS_UNIT_ID',
+        help='Modbus Unit ID',
     )
     cfg_parser.add('--query-period', required=False, type=int, default=DEFAULT_QUERY_PERIOD_SEC, env_var='QUERY_PERIOD')
     cfg_parser.add(
@@ -69,7 +78,9 @@ def _parse_args() -> argparse.Namespace:
 options = _parse_args()
 mqtt_builder = HassMqtt(mi_entities=options.mi_entities)
 microinverter_type = getattr(MicroinverterType, options.microinverter_type)
-modbus_client = HoymilesModbusTCP(host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type)
+modbus_client = HoymilesModbusTCP(
+    host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
+)
 mqtt_publisher = MqttPublisher(
     mqtt_broker=options.mqtt_broker,
     mqtt_port=options.mqtt_port,
