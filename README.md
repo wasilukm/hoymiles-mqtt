@@ -52,6 +52,12 @@ or with the option _--mi-entities_.
 
 ## Usage
 
+### Prerequisites
+- DTUs' _Ethernet_ port connected to a network
+- DTU has assigned IP address by DHCP server. IP address shall be reserved for the device
+- running MQTT broker, for example https://mosquitto.org/
+- MQTT integration enabled in Home Assistant, https://www.home-assistant.io/integrations/mqtt/
+
 ### From command line
     usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] --dtu-host DTU_HOST [--dtu-port DTU_PORT]
                                     [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
@@ -89,11 +95,19 @@ Build an image
 
     docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.1.0 -t hoymiles_mqtt
 
-Run
+Run (replace IP addresses)
 
     docker run -it -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 hoymiles_mqtt &
 
 Please note, depending on the needs more options can be specified with _-e_. See above for all possible options.
+
+## Known issues
+Hoymiles DUTs are not the most stable devices. Therefore, from time to time the tool may not be able to connect to DTU
+and will print the following exception:
+
+    Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
+
+The tool will continue its operation and try communication with DTU with the next period.
 
 ## Credits
 
