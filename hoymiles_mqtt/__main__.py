@@ -31,7 +31,9 @@ KNOWN_ENTITIES = [
 
 
 def _parse_args() -> argparse.Namespace:
-    cfg_parser = configargparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    cfg_parser = configargparse.ArgParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter, prog='python3 -m hoymiles_mqtt'
+    )
     cfg_parser.add('-c', '--config', required=False, type=str, is_config_file=True, help='Config file path')
     cfg_parser.add('--mqtt-broker', required=True, type=str, env_var='MQTT_BROKER', help='Address of MQTT broker')
     cfg_parser.add(
