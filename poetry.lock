@@ -243,7 +243,7 @@ dev = ["twine", "markdown", "flake8", "wheel"]
 
 [[package]]
 name = "hoymiles-modbus"
-version = "0.2.1"
+version = "0.4.0"
 description = "Gather data from Hoymiles microinverters."
 category = "main"
 optional = false
@@ -251,7 +251,7 @@ python-versions = ">=3.6.2,<4.0"
 
 [package.dependencies]
 mkdocs-material-extensions = ">=1.0.1,<2.0.0"
-plum-py = ">=0.7.4,<0.8.0"
+plum-py = "0.8.0"
 pymodbus = ">=2.5.3,<3.0.0"
 
 [package.extras]
@@ -605,7 +605,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "plum-py"
-version = "0.7.7"
+version = "0.8.0"
 description = "Pack/Unpack Memory."
 category = "main"
 optional = false
@@ -1070,7 +1070,7 @@ test = ["pytest", "black", "isort", "mypy", "flake8", "flake8-docstrings", "pyte
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2,<4.0"
-content-hash = "10024eb0a03999ed64174cee2b34d861e39b11146b88e7ea58802517b27c558d"
+content-hash = "584fc7f26ac9251d617fb15d18f04644217bc30475b24360942c6220e6cb0702"
 
 [metadata.files]
 atomicwrites = [
@@ -1290,8 +1290,8 @@ ghp-import = [
     {file = "ghp_import-2.0.2-py3-none-any.whl", hash = "sha256:5f8962b30b20652cdffa9c5a9812f7de6bcb56ec475acac579807719bf242c46"},
 ]
 hoymiles-modbus = [
-    {file = "hoymiles_modbus-0.2.1-py3-none-any.whl", hash = "sha256:21c8c339b867b0bd4852ab11e089340b360b9a635f849a1124c92f16e0af5581"},
-    {file = "hoymiles_modbus-0.2.1.tar.gz", hash = "sha256:dc331c07daea0dddac7e21378de3066a8758c3a60705a9161158dbbc1bfa0faa"},
+    {file = "hoymiles_modbus-0.4.0-py3-none-any.whl", hash = "sha256:ac763c8ff0988903060d4ee03725295666ab7454ab3d4e35754644e0c6b445c9"},
+    {file = "hoymiles_modbus-0.4.0.tar.gz", hash = "sha256:cf7dae049872a0a3ec9035202538d8713145d1c177f0e8f47fa66b027cb9aff1"},
 ]
 identify = [
     {file = "identify-2.4.4-py2.py3-none-any.whl", hash = "sha256:aa68609c7454dbcaae60a01ff6b8df1de9b39fe6e50b1f6107ec81dcda624aa6"},
@@ -1493,8 +1493,8 @@ pluggy = [
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 plum-py = [
-    {file = "plum-py-0.7.7.tar.gz", hash = "sha256:3bdfaa8feee07745447f833235c57d02cb6c599a0b5cc4b10a10c7b024b54555"},
-    {file = "plum_py-0.7.7-py3-none-any.whl", hash = "sha256:941f48009d7567330c3ce81e3563eda3ea1ef788083f4b2b21d6b96877485fea"},
+    {file = "plum-py-0.8.0.tar.gz", hash = "sha256:dc1e38bb7f9b1c09032aa00daec416ec6e42b5ffc3338e97d05200b4beed91da"},
+    {file = "plum_py-0.8.0-py3-none-any.whl", hash = "sha256:14356ea746048e59d4ac6b8bd32f1717ef03e49e1a4755ca7abb2aa799767453"},
 ]
 pre-commit = [
     {file = "pre_commit-2.17.0-py2.py3-none-any.whl", hash = "sha256:725fa7459782d7bec5ead072810e47351de01709be838c2ce1726b9591dad616"},
