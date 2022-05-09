@@ -1,3 +1,4 @@
+"""Hoymiles to MQTT tool."""
 import argparse
 
 import configargparse

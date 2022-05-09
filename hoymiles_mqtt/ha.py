@@ -1,3 +1,4 @@
+"""MQTT message builders for Home Assistant."""
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -29,6 +30,8 @@ ZERO = 0
 
 @dataclass
 class EntityDescription:
+    """Common entity properties."""
+
     platform: str = PLATFORM_SENSOR
     device_class: Optional[str] = None
     unit: Optional[str] = None
@@ -85,7 +88,16 @@ DtuEntities = {
 
 
 class HassMqtt:
+    """MQTT message builder for Home Assistant."""
+
     def __init__(self, mi_entities: List[str], post_process: bool = True):
+        """Initialize the object.
+
+        Arguments:
+            mi_entities: names of entities that shall be handled by tge builder
+            post_process: if to cache energy production
+
+        """
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
@@ -127,9 +139,16 @@ class HassMqtt:
             yield config_topic, json.dumps(config_payload)
 
     def clear_production_today(self):
+        """Clear todays' energy production."""
         self._production_today_cache = {}
 
     def get_configs(self, plant_data: PlantData):
+        """Get MQTT config messages for given data from DTU.
+
+        Arguments:
+            plant_data: data from DTU
+
+        """
         for topic, payload in self._get_config_payloads('DTU', plant_data.dtu, DtuEntities):
             yield topic, payload
         for microinverter_data in plant_data.microinverter_data:
@@ -171,6 +190,12 @@ class HassMqtt:
         plant_data.total_production = production_total
 
     def get_states(self, plant_data: PlantData):
+        """Get MQTT message for DTU data.
+
+        Arguments:
+            plant_data: data from DTU
+
+        """
         if self._post_process:
             self._process_plant_data(plant_data)
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
