@@ -97,7 +97,7 @@ Build an image
 
 Run (replace IP addresses)
 
-    docker run -itd -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 hoymiles_mqtt
+    docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 hoymiles_mqtt
 
 Please note, depending on the needs more options can be specified with _-e_. See above for all possible options.
 
