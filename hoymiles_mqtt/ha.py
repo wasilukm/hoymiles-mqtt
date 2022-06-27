@@ -105,6 +105,8 @@ class HassMqtt:
         Arguments:
             mi_entities: names of entities that shall be handled by tge builder
             post_process: if to cache energy production
+            expire_after: number of seconds after which an entity state should expire. This setting is added to the
+                          entity configuration. Applied only when `expire` flag is set in the entity description.
 
         """
         self._state_topics: Dict = {}

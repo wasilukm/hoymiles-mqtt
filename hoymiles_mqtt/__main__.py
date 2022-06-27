@@ -103,7 +103,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 options = _parse_args()
-mqtt_builder = HassMqtt(mi_entities=options.mi_entities)
+mqtt_builder = HassMqtt(mi_entities=options.mi_entities, expire_after=options.expire_after)
 microinverter_type = getattr(MicroinverterType, options.microinverter_type)
 modbus_client = HoymilesModbusTCP(
     host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
