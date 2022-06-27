@@ -37,6 +37,7 @@ class EntityDescription:
     unit: Optional[str] = None
     state_class: Optional[str] = None
     ignored_value: Optional[Any] = None
+    expire: Optional[bool] = True
 
 
 MicroinverterEntities = {
@@ -55,10 +56,16 @@ MicroinverterEntities = {
     ),
     'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
     'today_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL_INCREASING
+        device_class=DEVICE_CLASS_ENERGY,
+        unit=UNIT_WATS_PER_HOUR,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
+        expire=False,
     ),
     'total_production': EntityDescription(
-        device_class=DEVICE_CLASS_ENERGY, unit=UNIT_WATS_PER_HOUR, state_class=STATE_CLASS_TOTAL_INCREASING
+        device_class=DEVICE_CLASS_ENERGY,
+        unit=UNIT_WATS_PER_HOUR,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
+        expire=False,
     ),
     'temperature': EntityDescription(
         device_class=DEVICE_CLASS_TEMPERATURE, unit=UNIT_CELSIUS, state_class=STATE_CLASS_MEASUREMENT
@@ -76,12 +83,14 @@ DtuEntities = {
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
         ignored_value=ZERO,
+        expire=False,
     ),
     'total_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
         ignored_value=ZERO,
+        expire=False,
     ),
     'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR),
 }
@@ -90,7 +99,7 @@ DtuEntities = {
 class HassMqtt:
     """MQTT message builder for Home Assistant."""
 
-    def __init__(self, mi_entities: List[str], post_process: bool = True):
+    def __init__(self, mi_entities: List[str], post_process: bool = True, expire_after: int = 0):
         """Initialize the object.
 
         Arguments:
@@ -101,6 +110,7 @@ class HassMqtt:
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
+        self._expire_after: int = expire_after
         self._production_today_cache: Dict[str, int] = {}
         self._production_total_cache: Dict[str, int] = {}
         self._mi_entities: Dict[str, EntityDescription] = {}
@@ -135,6 +145,8 @@ class HassMqtt:
                 config_payload['unit_of_measurement'] = entity_definition.unit
             if entity_definition.state_class:
                 config_payload['state_class'] = entity_definition.state_class
+            if entity_definition.expire:
+                config_payload['expire_after'] = self._expire_after
             config_topic = self._get_config_topic(entity_definition.platform, device_serial_number, entity_name)
             yield config_topic, json.dumps(config_payload)
 

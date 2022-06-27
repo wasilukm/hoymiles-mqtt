@@ -85,6 +85,20 @@ def _parse_args() -> argparse.Namespace:
         env_var='MI_ENTITIES',
         help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
     )
+    cfg_parser.add(
+        '--expire-after',
+        required=False,
+        type=int,
+        default=0,
+        env_var='EXPIRE_AFTER',
+        help=(
+            "Defines the number of seconds after DTU or microinverter entities state expires, if it’s not updated "
+            "(for example due to communication issues). After expiry, entities state becomes unavailable."
+            "By default it is 0, which means that entities never expire. When different than 0, the value shall"
+            "be greater than the query period. This setting does not apply to entities that represent a total amount "
+            "such as daily energy production (they never expire)."
+        ),
+    )
     return cfg_parser.parse_args()
 
 
