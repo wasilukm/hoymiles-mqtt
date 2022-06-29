@@ -92,8 +92,8 @@ def _parse_args() -> argparse.Namespace:
         default=0,
         env_var='EXPIRE_AFTER',
         help=(
-            "Defines the number of seconds after DTU or microinverter entities state expires, if it’s not updated "
-            "(for example due to communication issues). After expiry, entities state becomes unavailable."
+            "Defines number of seconds after which DTU or microinverter entities expire, if updates are not received "
+            "(for example due to communication issues). After expiry, entities become unavailable in Home Assistant."
             "By default it is 0, which means that entities never expire. When different than 0, the value shall"
             "be greater than the query period. This setting does not apply to entities that represent a total amount "
             "such as daily energy production (they never expire)."
