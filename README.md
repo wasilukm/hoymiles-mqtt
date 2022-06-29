@@ -85,6 +85,11 @@ or with the option _--mi-entities_.
       --mi-entities MI_ENTITIES [MI_ENTITIES ...]
                             Microinverter entities that will be sent to MQTT. By default all entities are presented. [env var: MI_ENTITIES] (default: ['port_number', 'pv_voltage', 'pv_current', 'grid_voltage',
                             'grid_frequency', 'pv_power', 'today_production', 'total_production', 'temperature', 'operating_status', 'alarm_code', 'alarm_count', 'link_status'])
+      --expire-after EXPIRE_AFTER
+                            Defines number of seconds after which DTU or microinverter entities expire, if updates are not received (for example due to communication issues). After expiry, entities become unavailable in Home
+                            Assistant.By default it is 0, which means that entities never expire. When different than 0, the value shallbe greater than the query period. This setting does not apply to entities that represent
+                            a total amount such as daily energy production (they never expire). [env var: EXPIRE_AFTER] (default: 0)
+
 
     Args that start with '--' (eg. --mqtt-broker) can also be set in a config file (specified via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at https://goo.gl/R74nmi). If an
     arg is specified in more than one place, then commandline values override environment variables which override config file values which override defaults.
