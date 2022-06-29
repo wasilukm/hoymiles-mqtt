@@ -85,11 +85,25 @@ def _parse_args() -> argparse.Namespace:
         env_var='MI_ENTITIES',
         help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
     )
+    cfg_parser.add(
+        '--expire-after',
+        required=False,
+        type=int,
+        default=0,
+        env_var='EXPIRE_AFTER',
+        help=(
+            "Defines the number of seconds after DTU or microinverter entities state expires, if it’s not updated "
+            "(for example due to communication issues). After expiry, entities state becomes unavailable."
+            "By default it is 0, which means that entities never expire. When different than 0, the value shall"
+            "be greater than the query period. This setting does not apply to entities that represent a total amount "
+            "such as daily energy production (they never expire)."
+        ),
+    )
     return cfg_parser.parse_args()
 
 
 options = _parse_args()
-mqtt_builder = HassMqtt(mi_entities=options.mi_entities)
+mqtt_builder = HassMqtt(mi_entities=options.mi_entities, expire_after=options.expire_after)
 microinverter_type = getattr(MicroinverterType, options.microinverter_type)
 modbus_client = HoymilesModbusTCP(
     host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
