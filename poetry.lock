@@ -243,7 +243,7 @@ dev = ["wheel", "flake8", "markdown", "twine"]
 
 [[package]]
 name = "hoymiles-modbus"
-version = "0.4.0"
+version = "0.5.0"
 description = "Gather data from Hoymiles microinverters."
 category = "main"
 optional = false
@@ -255,9 +255,9 @@ plum-py = "0.8.0"
 pymodbus = ">=2.5.3,<3.0.0"
 
 [package.extras]
-test = ["black (==22.3.0)", "flake8 (>=3.9.2,<4.0.0)", "flake8-docstrings (>=1.6.0,<2.0.0)", "isort (>=5.8.0,<6.0.0)", "mypy (>=0.900,<0.901)", "pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<3.0.0)"]
-dev = ["bump2version (>=1.0.1,<2.0.0)", "pip (>=20.3.1,<21.0.0)", "pre-commit (>=2.12.0,<3.0.0)", "toml (>=0.10.2,<0.11.0)", "tox (>=3.20.1,<4.0.0)", "twine (>=3.3.0,<4.0.0)", "virtualenv (>=20.2.2,<21.0.0)"]
-doc = ["mkdocs (>=1.2.3,<2.0.0)", "mkdocs-autorefs (>=0.3.1)", "mkdocs-include-markdown-plugin (>=1.0.0,<2.0.0)", "mkdocs-material (>=8.2.5,<9.0.0)", "mkdocstrings (>=0.18.0,<0.19.0)"]
+dev = ["virtualenv (>=20.2.2,<21.0.0)", "twine (>=3.3.0,<4.0.0)", "tox (>=3.20.1,<4.0.0)", "toml (>=0.10.2,<0.11.0)", "pre-commit (>=2.12.0,<3.0.0)", "bump2version (>=1.0.1,<2.0.0)"]
+test = ["pytest-cov (>=2.12.0,<3.0.0)", "pytest (>=6.2.4,<7.0.0)", "mypy (>=0.900,<0.901)", "isort (>=5.8.0,<6.0.0)", "flake8-docstrings (>=1.6.0,<2.0.0)", "flake8 (>=3.9.2,<4.0.0)", "black (==22.3.0)"]
+doc = ["mkdocstrings (>=0.18.0,<0.19.0)", "mkdocs-material (>=8.2.5,<9.0.0)", "mkdocs-include-markdown-plugin (>=1.0.0,<2.0.0)", "mkdocs-autorefs (>=0.3.1)", "mkdocs (>=1.2.3,<2.0.0)"]
 
 [[package]]
 name = "identify"
@@ -1073,7 +1073,7 @@ test = ["pytest", "black", "isort", "mypy", "flake8", "flake8-docstrings", "pyte
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2,<4.0"
-content-hash = "708be3f06d04f7e6acdf964dd02f93fc90cd4c2fc57b36e80242d1a447322b66"
+content-hash = "7c6f12678e7f4cead81f523f363b045f951d704c65efe9324a13c71963c5a9a6"
 
 [metadata.files]
 atomicwrites = []
@@ -1202,10 +1202,7 @@ flake8-docstrings = [
     {file = "flake8_docstrings-1.6.0-py2.py3-none-any.whl", hash = "sha256:99cac583d6c7e32dd28bbfbef120a7c0d1b6dde4adb5a9fd441c4227a6534bde"},
 ]
 ghp-import = []
-hoymiles-modbus = [
-    {file = "hoymiles_modbus-0.4.0-py3-none-any.whl", hash = "sha256:ac763c8ff0988903060d4ee03725295666ab7454ab3d4e35754644e0c6b445c9"},
-    {file = "hoymiles_modbus-0.4.0.tar.gz", hash = "sha256:cf7dae049872a0a3ec9035202538d8713145d1c177f0e8f47fa66b027cb9aff1"},
-]
+hoymiles-modbus = []
 identify = [
     {file = "identify-2.4.4-py2.py3-none-any.whl", hash = "sha256:aa68609c7454dbcaae60a01ff6b8df1de9b39fe6e50b1f6107ec81dcda624aa6"},
     {file = "identify-2.4.4.tar.gz", hash = "sha256:6b4b5031f69c48bf93a646b90de9b381c6b5f560df4cbe0ed3cf7650ae741e4d"},
