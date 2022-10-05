@@ -140,7 +140,7 @@ def _parse_args() -> argparse.Namespace:
         help="Additional low level modbus communication parameter - strict timing, 1.5 character between requests.",
     )
     cfg_parser.add(
-        '--reconnect-delay',
+        '--comm-reconnect-delay',
         required=False,
         type=int,
         default=60000 * 5,

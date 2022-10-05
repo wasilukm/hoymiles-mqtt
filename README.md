@@ -62,7 +62,7 @@ or with the option _--mi-entities_.
     usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] --dtu-host DTU_HOST [--dtu-port DTU_PORT]
                                     [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]] [--expire-after EXPIRE_AFTER]
                                     [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES] [--comm-retry-on-empty COMM_RETRY_ON_EMPTY] [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT]
-                                    [--reconnect-delay RECONNECT_DELAY]
+                                    [--comm-reconnect-delay COMM_RECONNECT_DELAY]
 
     options:
       -h, --help            show this help message and exit
@@ -101,11 +101,12 @@ or with the option _--mi-entities_.
                             Additional low level modbus communication parameter - close connection on error. [env var: COMM_CLOSE_COMM_ON_ERROR] (default: False)
       --comm-strict COMM_STRICT
                             Additional low level modbus communication parameter - strict timing, 1.5 character between requests. [env var: COMM_STRICT] (default: True)
-      --reconnect-delay RECONNECT_DELAY
+      --comm-reconnect-delay COMM_RECONNECT_DELAY
                             Additional low level modbus communication parameter - delay in milliseconds before reconnecting. [env var: COMM_RECONNECT_DELAY] (default: 300000)
 
     Args that start with '--' (eg. --mqtt-broker) can also be set in a config file (specified via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at https://goo.gl/R74nmi). If an
     arg is specified in more than one place, then commandline values override environment variables which override config file values which override defaults.
+
 
 
 ### Docker
