@@ -99,6 +99,54 @@ def _parse_args() -> argparse.Namespace:
             "such as daily energy production (they never expire)."
         ),
     )
+    cfg_parser.add(
+        '--comm-timeout',
+        required=False,
+        type=int,
+        default=3,
+        env_var='COMM_TIMEOUT',
+        help="Additional low level modbus communication parameter - request timeout.",
+    )
+    cfg_parser.add(
+        '--comm-retries',
+        required=False,
+        type=int,
+        default=3,
+        env_var='COMM_RETRIES',
+        help="Additional low level modbus communication parameter - max number of retries per request.",
+    )
+    cfg_parser.add(
+        '--comm-retry-on-empty',
+        required=False,
+        type=bool,
+        default=False,
+        env_var='COMM_RETRY_ON_EMPTY',
+        help="Additional low level modbus communication parameter - retry if received an empty response.",
+    )
+    cfg_parser.add(
+        '--comm-close-comm-on-error',
+        required=False,
+        type=bool,
+        default=False,
+        env_var='COMM_CLOSE_COMM_ON_ERROR',
+        help="Additional low level modbus communication parameter - close connection on error.",
+    )
+    cfg_parser.add(
+        '--comm-strict',
+        required=False,
+        type=bool,
+        default=True,
+        env_var='COMM_STRICT',
+        help="Additional low level modbus communication parameter - strict timing, 1.5 character between requests.",
+    )
+    cfg_parser.add(
+        '--reconnect-delay',
+        required=False,
+        type=int,
+        default=60000 * 5,
+        env_var='COMM_RECONNECT_DELAY',
+        help="Additional low level modbus communication parameter - delay in milliseconds before reconnecting.",
+    )
     return cfg_parser.parse_args()
 
 
@@ -108,6 +156,13 @@ microinverter_type = getattr(MicroinverterType, options.microinverter_type)
 modbus_client = HoymilesModbusTCP(
     host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
 )
+modbus_client.comm_params.timeout = options.comm_timeout
+modbus_client.comm_params.retries = options.comm_retries
+modbus_client.comm_params.retry_on_empty = options.comm_retry_on_empty
+modbus_client.comm_params.close_comm_on_error = options.comm_close_comm_on_error
+modbus_client.comm_params.strict = options.comm_strict
+modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay
+
 mqtt_publisher = MqttPublisher(
     mqtt_broker=options.mqtt_broker,
     mqtt_port=options.mqtt_port,
