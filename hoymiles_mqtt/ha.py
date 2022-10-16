@@ -147,7 +147,7 @@ class HassMqtt:
                 config_payload['unit_of_measurement'] = entity_definition.unit
             if entity_definition.state_class:
                 config_payload['state_class'] = entity_definition.state_class
-            if entity_definition.expire:
+            if entity_definition.expire and self._expire_after:
                 config_payload['expire_after'] = self._expire_after
             config_topic = self._get_config_topic(entity_definition.platform, device_serial_number, entity_name)
             yield config_topic, json.dumps(config_payload)
