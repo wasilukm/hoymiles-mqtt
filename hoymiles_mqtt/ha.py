@@ -117,8 +117,8 @@ class HassMqtt:
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
         self._expire_after: int = expire_after
-        self._production_today_cache: Dict[Tuple[str, int], int] = {}
-        self._production_total_cache: Dict[Tuple[str, int], int] = {}
+        self._prod_today_cache: Dict[Tuple[str, int], int] = {}
+        self._prod_total_cache: Dict[Tuple[str, int], int] = {}
         self._mi_entities: Dict[str, EntityDescription] = {}
         self._port_entities: Dict[str, EntityDescription] = {}
         for entity_name, description in MicroinverterEntities.items():
@@ -162,7 +162,7 @@ class HassMqtt:
 
     def clear_production_today(self) -> None:
         """Clear todays' energy production."""
-        self._production_today_cache = {}
+        self._prod_today_cache = {}
 
     def get_configs(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
         """Get MQTT config messages for given data from DTU.
@@ -199,24 +199,18 @@ class HassMqtt:
     def _update_cache(self, plant_data: PlantData) -> None:
         for microinverter in plant_data.microinverter_data:
             cache_key = (microinverter.serial_number, microinverter.port_number)
-            if cache_key not in self._production_today_cache:
-                self._production_today_cache[cache_key] = ZERO
-            if cache_key not in self._production_total_cache:
-                self._production_total_cache[cache_key] = ZERO
+            if cache_key not in self._prod_today_cache:
+                self._prod_today_cache[cache_key] = ZERO
+            if cache_key not in self._prod_total_cache:
+                self._prod_total_cache[cache_key] = ZERO
             if microinverter.link_status:
-                self._production_today_cache[cache_key] = microinverter.today_production
-                self._production_total_cache[cache_key] = microinverter.total_production
+                self._prod_today_cache[cache_key] = microinverter.today_production
+                self._prod_total_cache[cache_key] = microinverter.total_production
 
     def _process_plant_data(self, plant_data: PlantData) -> None:
         self._update_cache(plant_data)
-        production_today = ZERO
-        production_total = ZERO
-        if self._production_today_cache and ZERO not in self._production_today_cache.values():
-            production_today = sum(self._production_today_cache.values())
-        if self._production_total_cache and ZERO not in self._production_total_cache.values():
-            production_total = sum(self._production_total_cache.values())
-        plant_data.today_production = production_today
-        plant_data.total_production = production_total
+        plant_data.today_production = sum(self._prod_today_cache.values()) if self._prod_today_cache else ZERO
+        plant_data.total_production = sum(self._prod_total_cache.values()) if self._prod_total_cache else ZERO
 
     def get_states(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
         """Get MQTT message for DTU data.
