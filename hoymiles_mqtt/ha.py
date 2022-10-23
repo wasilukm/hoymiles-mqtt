@@ -107,7 +107,8 @@ class HassMqtt:
         """Initialize the object.
 
         Arguments:
-            mi_entities: names of entities that shall be handled by the builder
+            mi_entities: names of microinverter entities that shall be handled by the builder
+            port_entities: names of microinverter port entities that shall be handled by the builder
             post_process: if to cache energy production
             expire_after: number of seconds after which an entity state should expire. This setting is added to the
                           entity configuration. Applied only when `expire` flag is set in the entity description.
