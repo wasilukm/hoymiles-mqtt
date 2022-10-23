@@ -129,10 +129,12 @@ class HassMqtt:
             if entity_name in port_entities:
                 self._port_entities[entity_name] = description
 
-    def _get_config_topic(self, platform: str, device_serial: str, entity_name) -> str:
+    @staticmethod
+    def _get_config_topic(platform: str, device_serial: str, entity_name) -> str:
         return f"homeassistant/{platform}/{device_serial}/{entity_name}/config"
 
-    def _get_state_topic(self, device_serial: str) -> str:
+    @staticmethod
+    def _get_state_topic(device_serial: str) -> str:
         return f"homeassistant/hoymiles_mqtt/{device_serial}/state"
 
     def _get_config_payloads(
