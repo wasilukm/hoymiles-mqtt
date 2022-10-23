@@ -14,21 +14,17 @@ DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
 
-KNOWN_ENTITIES = [
-    'port_number',
-    'pv_voltage',
-    'pv_current',
+MI_ENTITIES = [
     'grid_voltage',
     'grid_frequency',
-    'pv_power',
-    'today_production',
-    'total_production',
     'temperature',
     'operating_status',
     'alarm_code',
     'alarm_count',
     'link_status',
 ]
+
+PORT_ENTITIES = ['pv_voltage', 'pv_current', 'pv_power', 'today_production', 'total_production']
 
 
 def _parse_args() -> argparse.Namespace:
@@ -81,9 +77,28 @@ def _parse_args() -> argparse.Namespace:
         required=False,
         nargs="+",
         action='append',
-        default=KNOWN_ENTITIES,
+        default=MI_ENTITIES,
         env_var='MI_ENTITIES',
         help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
+    )
+    cfg_parser.add(
+        '--mi-entities',
+        required=False,
+        nargs="+",
+        action='append',
+        default=MI_ENTITIES,
+        env_var='MI_ENTITIES',
+        help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
+    )
+    cfg_parser.add(
+        '--port-entities',
+        required=False,
+        nargs="+",
+        action='append',
+        default=PORT_ENTITIES,
+        env_var='PORT_ENTITIES',
+        help="Microinverters' port entities (in fact PV panel entities) that will be sent to MQTT. By default all "
+        "entities are presented.",
     )
     cfg_parser.add(
         '--expire-after',
@@ -151,7 +166,9 @@ def _parse_args() -> argparse.Namespace:
 
 
 options = _parse_args()
-mqtt_builder = HassMqtt(mi_entities=options.mi_entities, expire_after=options.expire_after)
+mqtt_builder = HassMqtt(
+    mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
+)
 microinverter_type = getattr(MicroinverterType, options.microinverter_type)
 modbus_client = HoymilesModbusTCP(
     host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
