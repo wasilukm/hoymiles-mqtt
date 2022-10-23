@@ -201,6 +201,8 @@ class HassMqtt:
             value = getattr(entity_data, entity_name)
             if description.ignored_value is not None and value == description.ignored_value:
                 continue
+            if description.value_converter:
+                value = description.value_converter(value)
             values[entity_name] = str(value)
         payload = json.dumps(values)
         state_topic = self._get_state_topic(device_serial)
