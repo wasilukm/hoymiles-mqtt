@@ -1,7 +1,7 @@
 """MQTT message builders for Home Assistant."""
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -38,6 +38,7 @@ class EntityDescription:
     state_class: Optional[str] = None
     ignored_value: Optional[Any] = None
     expire: Optional[bool] = True
+    value_converter: Optional[Callable] = None
 
 
 MicroinverterEntities = {
@@ -94,7 +95,7 @@ DtuEntities = {
         ignored_value=ZERO,
         expire=False,
     ),
-    'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR),
+    'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR, value_converter=lambda x: 'on' if x else 'off'),
 }
 
 
