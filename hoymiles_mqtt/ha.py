@@ -14,6 +14,7 @@ DEVICE_CLASS_FREQUENCY = 'frequency'
 DEVICE_CLASS_POWER = 'power'
 DEVICE_CLASS_ENERGY = 'energy'
 DEVICE_CLASS_TEMPERATURE = 'temperature'
+DEVICE_CLASS_PROBLEM = 'problem'
 
 STATE_CLASS_MEASUREMENT = 'measurement'
 STATE_CLASS_TOTAL_INCREASING = 'total_increasing'
@@ -95,7 +96,11 @@ DtuEntities = {
         ignored_value=ZERO,
         expire=False,
     ),
-    'alarm_flag': EntityDescription(platform=PLATFORM_BINARY_SENSOR, value_converter=lambda x: 'on' if x else 'off'),
+    'alarm_flag': EntityDescription(
+        platform=PLATFORM_BINARY_SENSOR,
+        device_class=DEVICE_CLASS_PROBLEM,
+        value_converter=lambda x: 'ON' if x else 'OFF',
+    ),
 }
 
 
