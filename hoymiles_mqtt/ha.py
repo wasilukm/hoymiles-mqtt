@@ -135,8 +135,13 @@ class HassMqtt:
         return f"homeassistant/hoymiles_mqtt/{device_serial}/state"
 
     def _get_config_payloads(
-        self, device_name: str, device_serial_number, entity_definitions: Dict[str, EntityDescription]
+        self,
+        device_name: str,
+        device_serial_number,
+        entity_definitions: Dict[str, EntityDescription],
+        entity_prefix: str = '',
     ) -> Iterable[Tuple[str, str]]:
+        entity_prefix = entity_prefix if entity_prefix else device_name
         for entity_name, entity_definition in entity_definitions.items():
             config_payload = {
                 "device": {
@@ -144,7 +149,7 @@ class HassMqtt:
                     "identifiers": [f"hoymiles_mqtt_{device_serial_number}"],
                     "manufacturer": "Hoymiles",
                 },
-                "name": f"{device_name}_{device_serial_number}_{entity_name}",
+                "name": f"{entity_prefix}_{device_serial_number}_{entity_name}",
                 "unique_id": f"hoymiles_mqtt_{device_serial_number}_{entity_name}",
                 "state_topic": self._get_state_topic(device_serial_number),
                 "value_template": "{{ value_json.%s }}" % entity_name,
@@ -174,12 +179,13 @@ class HassMqtt:
         for topic, payload in self._get_config_payloads('DTU', plant_data.dtu, DtuEntities):
             yield topic, payload
         for microinverter_data in plant_data.microinverter_data:
-            for topic, payload in self._get_config_payloads(
-                'inverter', microinverter_data.serial_number, self._mi_entities
-            ):
+            for topic, payload in self._get_config_payloads('inv', microinverter_data.serial_number, self._mi_entities):
                 yield topic, payload
             for topic, payload in self._get_config_payloads(
-                f'port_{microinverter_data.port_number}', microinverter_data.serial_number, self._port_entities
+                'inv',
+                microinverter_data.serial_number,
+                self._port_entities,
+                entity_prefix=f'port_{microinverter_data.port_number}',
             ):
                 yield topic, payload
 
