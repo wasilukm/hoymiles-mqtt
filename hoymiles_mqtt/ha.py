@@ -252,8 +252,11 @@ class HassMqtt:
         if self._post_process:
             self._process_plant_data(plant_data)
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
+        known_serials = []
         for microinverter_data in plant_data.microinverter_data:
-            yield self._get_state(microinverter_data.serial_number, self._mi_entities, microinverter_data)
+            if microinverter_data.serial_number not in known_serials:
+                known_serials.append(microinverter_data.serial_number)
+                yield self._get_state(microinverter_data.serial_number, self._mi_entities, microinverter_data)
             yield self._get_state(
                 microinverter_data.serial_number,
                 self._port_entities,
