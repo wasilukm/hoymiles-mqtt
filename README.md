@@ -14,7 +14,7 @@ Send data from Hoymiles photovoltaic installation to Home Assistant through MQTT
 * PyPI: <https://pypi.org/project/hoymiles-mqtt/>
 * Free software: MIT
 
-The tool periodically communicates with Hoymiles DTU trough ModbusTCP and sends gathered data to MQTT broker.
+The tool periodically communicates with Hoymiles DTU (Pro) trough ModbusTCP and sends gathered data to MQTT broker.
 Data to MQTT broker are sent with topics that can be recognized by Home Assistant.
 In a result DTU and each micro-inverter can be represented in Home Assistant as a separate device with set of entities. Example:
 
@@ -33,14 +33,8 @@ DTU device represent overall data for the installation:
 - total_production - lifetime energy production - sum from all micro-inverters
 
 Each micro-inverter has the following entities:
-- port_number
-- pv_voltage
-- pv_current
 - grid_voltage
 - grid_frequency
-- pv_power
-- today_production
-- total_production
 - temperature
 - operating_status
 - alarm_code
@@ -49,6 +43,15 @@ Each micro-inverter has the following entities:
 
 Depending on the installation (number of micro-inverter), the tool may create many entities. One may limit the entities
 or with the option _--mi-entities_.
+
+A micro-inverter can support multiple ports (PV panels), their states are represented by:
+- pv_voltage
+- pv_current
+- pv_power
+- today_production
+- total_production
+
+Publishing of these entities can be controlled with _--port-entities_.
 
 ## Usage
 
@@ -60,9 +63,9 @@ or with the option _--mi-entities_.
 
 ### From command line
     usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] --dtu-host DTU_HOST [--dtu-port DTU_PORT]
-                                    [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]] [--expire-after EXPIRE_AFTER]
-                                    [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES] [--comm-retry-on-empty COMM_RETRY_ON_EMPTY] [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT]
-                                    [--comm-reconnect-delay COMM_RECONNECT_DELAY]
+                                    [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
+                                    [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]] [--expire-after EXPIRE_AFTER] [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES] [--comm-retry-on-empty COMM_RETRY_ON_EMPTY]
+                                    [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT] [--comm-reconnect-delay COMM_RECONNECT_DELAY]
 
     options:
       -h, --help            show this help message and exit
@@ -85,8 +88,11 @@ or with the option _--mi-entities_.
       --microinverter-type {MI,HM}
                             Type od microinverters in the installation. Mixed types are not supported. [env var: MICROINVERTER_TYPE] (default: MI)
       --mi-entities MI_ENTITIES [MI_ENTITIES ...]
-                            Microinverter entities that will be sent to MQTT. By default all entities are presented. [env var: MI_ENTITIES] (default: ['port_number', 'pv_voltage', 'pv_current', 'grid_voltage',
-                            'grid_frequency', 'pv_power', 'today_production', 'total_production', 'temperature', 'operating_status', 'alarm_code', 'alarm_count', 'link_status'])
+                            Microinverter entities that will be sent to MQTT. By default all entities are presented. [env var: MI_ENTITIES] (default: ['grid_voltage', 'grid_frequency', 'temperature', 'operating_status',
+                            'alarm_code', 'alarm_count', 'link_status'])
+      --port-entities PORT_ENTITIES [PORT_ENTITIES ...]
+                            Microinverters' port entities (in fact PV panel entities) that will be sent to MQTT. By default all entities are presented. [env var: PORT_ENTITIES] (default: ['pv_voltage', 'pv_current',
+                            'pv_power', 'today_production', 'total_production'])
       --expire-after EXPIRE_AFTER
                             Defines number of seconds after which DTU or microinverter entities expire, if updates are not received (for example due to communication issues). After expiry, entities become unavailable in Home
                             Assistant.By default it is 0, which means that entities never expire. When different than 0, the value shallbe greater than the query period. This setting does not apply to entities that represent
@@ -113,7 +119,7 @@ or with the option _--mi-entities_.
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.2.0 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.3.0 -t hoymiles_mqtt
 
 Run (replace IP addresses)
 
@@ -128,6 +134,9 @@ and will print the following exception:
     Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
 
 The tool will continue its operation and try communication with DTU with the next period.
+
+If the exception is constantly repeating and data is not refreshed in Home Assistant it may mean that DTU has crashed
+and requires power cycle.
 
 ## Credits
 
