@@ -140,17 +140,24 @@ class HassMqtt:
         return f"homeassistant/{platform}/{device_serial}/{entity_name}/config"
 
     @staticmethod
-    def _get_state_topic(device_serial: str) -> str:
-        return f"homeassistant/hoymiles_mqtt/{device_serial}/state"
+    def _get_state_topic(device_serial: str, port: Optional[int]) -> str:
+        if port is not None:
+            sub_topic = f'{device_serial}/{port}'
+        else:
+            sub_topic = device_serial
+        return f"homeassistant/hoymiles_mqtt/{sub_topic}/state"
 
     def _get_config_payloads(
         self,
         device_name: str,
         device_serial_number,
         entity_definitions: Dict[str, EntityDescription],
-        entity_prefix: str = '',
+        port: Optional[int] = None,
     ) -> Iterable[Tuple[str, str]]:
-        entity_prefix = entity_prefix if entity_prefix else device_name
+        if port is not None:
+            entity_prefix = f'port_{port}'
+        else:
+            entity_prefix = device_name
         for entity_name, entity_definition in entity_definitions.items():
             config_payload = {
                 "device": {
@@ -159,8 +166,8 @@ class HassMqtt:
                     "manufacturer": "Hoymiles",
                 },
                 "name": f"{entity_prefix}_{device_serial_number}_{entity_name}",
-                "unique_id": f"hoymiles_mqtt_{device_serial_number}_{entity_name}",
-                "state_topic": self._get_state_topic(device_serial_number),
+                "unique_id": f"hoymiles_mqtt_{entity_prefix}_{device_serial_number}_{entity_name}",
+                "state_topic": self._get_state_topic(device_serial_number, port),
                 "value_template": "{{ value_json.%s }}" % entity_name,
             }
             if entity_definition.device_class:
@@ -171,7 +178,9 @@ class HassMqtt:
                 config_payload['state_class'] = entity_definition.state_class
             if entity_definition.expire and self._expire_after:
                 config_payload['expire_after'] = str(self._expire_after)
-            config_topic = self._get_config_topic(entity_definition.platform, device_serial_number, entity_name)
+            config_topic = self._get_config_topic(
+                entity_definition.platform, device_serial_number, f'{entity_prefix}_{entity_name}'
+            )
             yield config_topic, json.dumps(config_payload)
 
     def clear_production_today(self) -> None:
@@ -194,12 +203,16 @@ class HassMqtt:
                 'inv',
                 microinverter_data.serial_number,
                 self._port_entities,
-                entity_prefix=f'port_{microinverter_data.port_number}',
+                microinverter_data.port_number,
             ):
                 yield topic, payload
 
     def _get_state(
-        self, device_serial: str, entity_definitions: Dict[str, EntityDescription], entity_data
+        self,
+        device_serial: str,
+        entity_definitions: Dict[str, EntityDescription],
+        entity_data,
+        port: Optional[int] = None,
     ) -> Tuple[str, str]:
         values = {}
         for entity_name, description in entity_definitions.items():
@@ -210,7 +223,7 @@ class HassMqtt:
                 value = description.value_converter(value)
             values[entity_name] = str(value)
         payload = json.dumps(values)
-        state_topic = self._get_state_topic(device_serial)
+        state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
 
     def _update_cache(self, plant_data: PlantData) -> None:
@@ -241,4 +254,9 @@ class HassMqtt:
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
         for microinverter_data in plant_data.microinverter_data:
             yield self._get_state(microinverter_data.serial_number, self._mi_entities, microinverter_data)
-            yield self._get_state(microinverter_data.serial_number, self._port_entities, microinverter_data)
+            yield self._get_state(
+                microinverter_data.serial_number,
+                self._port_entities,
+                microinverter_data,
+                microinverter_data.port_number,
+            )
