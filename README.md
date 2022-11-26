@@ -127,16 +127,21 @@ Run (replace IP addresses)
 
 Please note, depending on the needs more options can be specified with _-e_. See above for all possible options.
 
-## Known issues
-Hoymiles DUTs are not the most stable devices. Therefore, from time to time the tool may not be able to connect to DTU
-and will print the following exception:
+## Troubleshooting
 
-    Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
+  - Hoymiles DUTs are not the most stable devices. Therefore, from time to time the tool may not be able
+    to connect to DTU and will print the following exception:
 
-The tool will continue its operation and try communication with DTU with the next period.
+    >Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
 
-If the exception is constantly repeating and data is not refreshed in Home Assistant it may mean that DTU has crashed
-and requires power cycle.
+    The tool will continue its operation and try communication with DTU with the next period.
+
+    If the exception is constantly repeating and data is not refreshed in Home Assistant:
+      - power cycle DTU
+      - try to update DTU's firmware
+
+  - `libseccomp2` library may be missing on some operating systems, ensure the library is installed
+
 
 ## Credits
 
