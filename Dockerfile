@@ -4,7 +4,8 @@ FROM python:3.9-alpine
 
 WORKDIR /hoymiles-mqtt
 
-RUN apt-get update && apt-get install -y git
+RUN apk update
+RUN apk add git
 COPY . .
 RUN pip3 install -e .
 
