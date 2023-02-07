@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.0] (2023-02-07)
+
+* add support for Python 3.10 and 3.11
+* remove support for Python 3.6 and 3.8
+
 ## [0.3.0] (2022-10-30)
 
 * BREAKING CHANGE - add support for multiple ports (PV panels) in one micro-inverter. This required renaming of inverters'
