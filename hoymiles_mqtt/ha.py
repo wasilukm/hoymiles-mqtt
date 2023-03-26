@@ -31,13 +31,13 @@ ZERO = 0
 
 def _ignore_on_operating_status(data, _):
     ignore = False
-    if data['operating_status'] != 3 and data['link_status'] == 1:
+    if getattr(data, 'operating_status') != 3 and getattr(data, 'link_status') == 1:
         ignore = True
     return ignore
 
 
 def _ignore_when_zero(data, entity_name):
-    return True if data[entity_name] == ZERO else False
+    return True if getattr(data, entity_name) == ZERO else False
 
 
 @dataclass
