@@ -1,7 +1,7 @@
 """MQTT message builders for Home Assistant."""
 import json
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -29,6 +29,17 @@ UNIT_WATS_PER_HOUR = 'Wh'
 ZERO = 0
 
 
+def _ignore_on_operating_status(data, _):
+    ignore = False
+    if data['operating_status'] != 3 and data['link_status'] == 1:
+        ignore = True
+    return ignore
+
+
+def _ignore_when_zero(data, entity_name):
+    return True if data[entity_name] == ZERO else False
+
+
 @dataclass
 class EntityDescription:
     """Common entity properties."""
@@ -37,23 +48,24 @@ class EntityDescription:
     device_class: Optional[str] = None
     unit: Optional[str] = None
     state_class: Optional[str] = None
-    ignored_value: Optional[Any] = None
+    ignore_rule: Optional[Callable] = None
     expire: Optional[bool] = True
     value_converter: Optional[Callable] = None
 
 
 MicroinverterEntities = {
     'grid_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float, ignore_rule=_ignore_on_operating_status,
     ),
     'grid_frequency': EntityDescription(
-        device_class=DEVICE_CLASS_FREQUENCY, unit=UNIT_HERTZ, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_FREQUENCY, unit=UNIT_HERTZ, state_class=STATE_CLASS_MEASUREMENT, value_converter=float, ignore_rule=_ignore_on_operating_status,
     ),
     'temperature': EntityDescription(
         device_class=DEVICE_CLASS_TEMPERATURE,
         unit=UNIT_CELSIUS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
+        ignore_rule=_ignore_on_operating_status,
     ),
     'operating_status': EntityDescription(),
     'alarm_code': EntityDescription(),
@@ -63,13 +75,13 @@ MicroinverterEntities = {
 
 PortEntities = {
     'pv_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float, ignore_rule=_ignore_on_operating_status,
     ),
     'pv_current': EntityDescription(
-        device_class=DEVICE_CLASS_CURRENT, unit=UNIT_AMPERES, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_CURRENT, unit=UNIT_AMPERES, state_class=STATE_CLASS_MEASUREMENT, value_converter=float, ignore_rule=_ignore_on_operating_status,
     ),
     'pv_power': EntityDescription(
-        device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float, ignore_rule=_ignore_on_operating_status,
     ),
     'today_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
@@ -93,14 +105,14 @@ DtuEntities = {
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
-        ignored_value=ZERO,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
     'total_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
-        ignored_value=ZERO,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
     'alarm_flag': EntityDescription(
@@ -222,7 +234,7 @@ class HassMqtt:
         values = {}
         for entity_name, description in entity_definitions.items():
             value = getattr(entity_data, entity_name)
-            if description.ignored_value is not None and value == description.ignored_value:
+            if description.ignore_rule and description.ignore_rule(entity_data, entity_name):
                 continue
             if description.value_converter:
                 value = description.value_converter(value)
