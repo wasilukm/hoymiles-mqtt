@@ -76,7 +76,6 @@ def _parse_args() -> argparse.Namespace:
         '--mi-entities',
         required=False,
         nargs="+",
-        action='append',
         default=MI_ENTITIES,
         env_var='MI_ENTITIES',
         help='Microinverter entities that will be sent to MQTT. By default all entities are presented.',
@@ -85,7 +84,6 @@ def _parse_args() -> argparse.Namespace:
         '--port-entities',
         required=False,
         nargs="+",
-        action='append',
         default=PORT_ENTITIES,
         env_var='PORT_ENTITIES',
         help="Microinverters' port entities (in fact PV panel entities) that will be sent to MQTT. By default all "
