@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.1] (2023-07-09)
+
+*  Fix parsing MI_ENTITIES and PORT_ENTITIES env variables. Values specified in
+   these variables were added to the default list of options instead of replacing them.
+
 ## [0.4.0] (2023-02-07)
 
 * add support for Python 3.10 and 3.11
