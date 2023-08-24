@@ -154,10 +154,7 @@ class HassMqtt:
         entity_definitions: Dict[str, EntityDescription],
         port: Optional[int] = None,
     ) -> Iterable[Tuple[str, str]]:
-        if port is not None:
-            entity_prefix = f'port_{port}'
-        else:
-            entity_prefix = device_name
+        entity_prefix = f'port_{port}' if port is not None else ''
         for entity_name, entity_definition in entity_definitions.items():
             config_payload = {
                 "device": {
@@ -165,7 +162,7 @@ class HassMqtt:
                     "identifiers": [f"hoymiles_mqtt_{device_serial_number}"],
                     "manufacturer": "Hoymiles",
                 },
-                "name": f"{entity_prefix}_{device_serial_number}_{entity_name}",
+                "name": f'{entity_prefix}_{entity_name}' if entity_prefix else entity_name,
                 "unique_id": f"hoymiles_mqtt_{entity_prefix}_{device_serial_number}_{entity_name}",
                 "state_topic": self._get_state_topic(device_serial_number, port),
                 "value_template": "{{ value_json.%s }}" % entity_name,
