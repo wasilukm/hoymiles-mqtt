@@ -30,117 +30,115 @@ def test_config_payload():
     plant_data = PlantData('dtu_serial', microinverter_data=[microinverter_data])
     ha = HassMqtt(mi_entities=['grid_voltage'], port_entities=['pv_voltage'])
     payload = list(ha.get_configs(plant_data))
-    assert payload == [
-        (
-            'homeassistant/sensor/dtu_serial/_pv_power/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'DTU_dtu_serial',
-                        'identifiers': ['hoymiles_mqtt_dtu_serial'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'pv_power',
-                    'unique_id': 'hoymiles_mqtt__dtu_serial_pv_power',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
-                    'value_template': '{{ value_json.pv_power }}',
-                    'device_class': 'power',
-                    'unit_of_measurement': 'W',
-                    'state_class': 'measurement',
-                }
-            ),
+    assert payload[0] == (
+        'homeassistant/sensor/dtu_serial/DTU_pv_power/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'DTU_dtu_serial',
+                    'identifiers': ['hoymiles_mqtt_dtu_serial'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'pv_power',
+                'unique_id': 'hoymiles_mqtt_DTU_dtu_serial_pv_power',
+                'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
+                'value_template': '{{ value_json.pv_power }}',
+                'device_class': 'power',
+                'unit_of_measurement': 'W',
+                'state_class': 'measurement',
+            }
         ),
-        (
-            'homeassistant/sensor/dtu_serial/_today_production/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'DTU_dtu_serial',
-                        'identifiers': ['hoymiles_mqtt_dtu_serial'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'today_production',
-                    'unique_id': 'hoymiles_mqtt__dtu_serial_today_production',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
-                    'value_template': '{{ value_json.today_production }}',
-                    'device_class': 'energy',
-                    'unit_of_measurement': 'Wh',
-                    'state_class': 'total_increasing',
-                }
-            ),
+    )
+    assert payload[1] == (
+        'homeassistant/sensor/dtu_serial/DTU_today_production/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'DTU_dtu_serial',
+                    'identifiers': ['hoymiles_mqtt_dtu_serial'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'today_production',
+                'unique_id': 'hoymiles_mqtt_DTU_dtu_serial_today_production',
+                'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
+                'value_template': '{{ value_json.today_production }}',
+                'device_class': 'energy',
+                'unit_of_measurement': 'Wh',
+                'state_class': 'total_increasing',
+            }
         ),
-        (
-            'homeassistant/sensor/dtu_serial/_total_production/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'DTU_dtu_serial',
-                        'identifiers': ['hoymiles_mqtt_dtu_serial'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'total_production',
-                    'unique_id': 'hoymiles_mqtt__dtu_serial_total_production',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
-                    'value_template': '{{ value_json.total_production }}',
-                    'device_class': 'energy',
-                    'unit_of_measurement': 'Wh',
-                    'state_class': 'total_increasing',
-                }
-            ),
+    )
+    assert payload[2] == (
+        'homeassistant/sensor/dtu_serial/DTU_total_production/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'DTU_dtu_serial',
+                    'identifiers': ['hoymiles_mqtt_dtu_serial'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'total_production',
+                'unique_id': 'hoymiles_mqtt_DTU_dtu_serial_total_production',
+                'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
+                'value_template': '{{ value_json.total_production }}',
+                'device_class': 'energy',
+                'unit_of_measurement': 'Wh',
+                'state_class': 'total_increasing',
+            }
         ),
-        (
-            'homeassistant/binary_sensor/dtu_serial/_alarm_flag/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'DTU_dtu_serial',
-                        'identifiers': ['hoymiles_mqtt_dtu_serial'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'alarm_flag',
-                    'unique_id': 'hoymiles_mqtt__dtu_serial_alarm_flag',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
-                    'value_template': '{{ value_json.alarm_flag }}',
-                    'device_class': 'problem',
-                }
-            ),
+    )
+    assert payload[3] == (
+        'homeassistant/binary_sensor/dtu_serial/DTU_alarm_flag/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'DTU_dtu_serial',
+                    'identifiers': ['hoymiles_mqtt_dtu_serial'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'alarm_flag',
+                'unique_id': 'hoymiles_mqtt_DTU_dtu_serial_alarm_flag',
+                'state_topic': 'homeassistant/hoymiles_mqtt/dtu_serial/state',
+                'value_template': '{{ value_json.alarm_flag }}',
+                'device_class': 'problem',
+            }
         ),
-        (
-            'homeassistant/sensor/102162804827/_grid_voltage/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'inv_102162804827',
-                        'identifiers': ['hoymiles_mqtt_102162804827'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'grid_voltage',
-                    'unique_id': 'hoymiles_mqtt__102162804827_grid_voltage',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/102162804827/state',
-                    'value_template': '{{ value_json.grid_voltage }}',
-                    'device_class': 'voltage',
-                    'unit_of_measurement': 'V',
-                    'state_class': 'measurement',
-                }
-            ),
+    )
+    assert payload[4] == (
+        'homeassistant/sensor/102162804827/inv_grid_voltage/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'inv_102162804827',
+                    'identifiers': ['hoymiles_mqtt_102162804827'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'grid_voltage',
+                'unique_id': 'hoymiles_mqtt_inv_102162804827_grid_voltage',
+                'state_topic': 'homeassistant/hoymiles_mqtt/102162804827/state',
+                'value_template': '{{ value_json.grid_voltage }}',
+                'device_class': 'voltage',
+                'unit_of_measurement': 'V',
+                'state_class': 'measurement',
+            }
         ),
-        (
-            'homeassistant/sensor/102162804827/port_3_pv_voltage/config',
-            json.dumps(
-                {
-                    'device': {
-                        'name': 'inv_102162804827',
-                        'identifiers': ['hoymiles_mqtt_102162804827'],
-                        'manufacturer': 'Hoymiles',
-                    },
-                    'name': 'port_3_pv_voltage',
-                    'unique_id': 'hoymiles_mqtt_port_3_102162804827_pv_voltage',
-                    'state_topic': 'homeassistant/hoymiles_mqtt/102162804827/3/state',
-                    'value_template': '{{ value_json.pv_voltage }}',
-                    'device_class': 'voltage',
-                    'unit_of_measurement': 'V',
-                    'state_class': 'measurement',
-                }
-            ),
+    )
+    assert payload[5] == (
+        'homeassistant/sensor/102162804827/port_3_pv_voltage/config',
+        json.dumps(
+            {
+                'device': {
+                    'name': 'inv_102162804827',
+                    'identifiers': ['hoymiles_mqtt_102162804827'],
+                    'manufacturer': 'Hoymiles',
+                },
+                'name': 'port_3_pv_voltage',
+                'unique_id': 'hoymiles_mqtt_port_3_102162804827_pv_voltage',
+                'state_topic': 'homeassistant/hoymiles_mqtt/102162804827/3/state',
+                'value_template': '{{ value_json.pv_voltage }}',
+                'device_class': 'voltage',
+                'unit_of_measurement': 'V',
+                'state_class': 'measurement',
+            }
         ),
-    ]
+    )

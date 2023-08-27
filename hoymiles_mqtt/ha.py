@@ -155,7 +155,7 @@ class HassMqtt:
         port: Optional[int] = None,
     ) -> Iterable[Tuple[str, str]]:
         port_prefix = f'port_{port}' if port is not None else ''
-        entity_prefix = port_prefix if port_prefix is not None else device_name
+        entity_prefix = port_prefix if port_prefix else device_name
         for entity_name, entity_definition in entity_definitions.items():
             config_payload = {
                 "device": {
