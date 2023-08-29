@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.0] (2023-08-29)
+
+* Rename entity names to not include device name, this is to align with https://developers.home-assistant.io/blog/2023-057-21-change-naming-mqtt-entities/#naming-of-mqtt-entities
+* DStarting from this version, usage with Home Assistant older than 2023.8 is not recommended
+
 ## [0.4.1] (2023-07-09)
 
 *  Fix parsing MI_ENTITIES and PORT_ENTITIES env variables. Values specified in
