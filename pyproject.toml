@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "hoymiles-mqtt"
-version = "0.4.1"
+version = "0.5.0"
 homepage = "https://github.com/wasilukm/hoymiles-mqtt"
 description = "Send data from Hoymiles photovoltaic installation to MQTT server."
 authors = ["Foo Bar <foo@bar.com>"]
