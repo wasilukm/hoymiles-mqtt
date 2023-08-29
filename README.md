@@ -119,7 +119,7 @@ Publishing of these entities can be controlled with _--port-entities_.
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.4.0 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.5.0 -t hoymiles_mqtt
 
 Run (replace IP addresses)
 
@@ -134,7 +134,7 @@ Please note, depending on the needs more options can be specified with _-e_. See
 
     >Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
 
-    The tool will continue its operation and try communication with DTU with the next period.
+    The tool will continue its operation and try to communicate with DTU in the next period.
 
     If the exception is constantly repeating and data is not refreshed in Home Assistant:
       - power cycle DTU
