@@ -5,6 +5,7 @@ import configargparse
 from hoymiles_modbus.client import HoymilesModbusTCP
 from hoymiles_modbus.datatypes import MicroinverterType
 
+from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 from hoymiles_mqtt.runners import HoymilesQueryJob, run_periodic_job
@@ -13,18 +14,6 @@ DEFAULT_MQTT_PORT = 1883
 DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
-
-MI_ENTITIES = [
-    'grid_voltage',
-    'grid_frequency',
-    'temperature',
-    'operating_status',
-    'alarm_code',
-    'alarm_count',
-    'link_status',
-]
-
-PORT_ENTITIES = ['pv_voltage', 'pv_current', 'pv_power', 'today_production', 'total_production']
 
 
 def _parse_args() -> argparse.Namespace:
