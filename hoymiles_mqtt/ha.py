@@ -220,6 +220,7 @@ class HassMqtt:
             if description.value_converter:
                 value = description.value_converter(value)
             values[entity_name] = value
+        print('##########', values)
         payload = json.dumps(values)
         state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
