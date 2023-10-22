@@ -44,13 +44,16 @@ class EntityDescription:
 
 MicroinverterEntities = {
     'grid_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT
+        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
     ),
     'grid_frequency': EntityDescription(
-        device_class=DEVICE_CLASS_FREQUENCY, unit=UNIT_HERTZ, state_class=STATE_CLASS_MEASUREMENT
+        device_class=DEVICE_CLASS_FREQUENCY, unit=UNIT_HERTZ, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
     ),
     'temperature': EntityDescription(
-        device_class=DEVICE_CLASS_TEMPERATURE, unit=UNIT_CELSIUS, state_class=STATE_CLASS_MEASUREMENT
+        device_class=DEVICE_CLASS_TEMPERATURE,
+        unit=UNIT_CELSIUS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
     ),
     'operating_status': EntityDescription(),
     'alarm_code': EntityDescription(),
@@ -60,12 +63,14 @@ MicroinverterEntities = {
 
 PortEntities = {
     'pv_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT
+        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
     ),
     'pv_current': EntityDescription(
-        device_class=DEVICE_CLASS_CURRENT, unit=UNIT_AMPERES, state_class=STATE_CLASS_MEASUREMENT
+        device_class=DEVICE_CLASS_CURRENT, unit=UNIT_AMPERES, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
     ),
-    'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
+    'pv_power': EntityDescription(
+        device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+    ),
     'today_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
@@ -81,7 +86,9 @@ PortEntities = {
 }
 
 DtuEntities = {
-    'pv_power': EntityDescription(device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT),
+    'pv_power': EntityDescription(
+        device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+    ),
     'today_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
@@ -220,8 +227,6 @@ class HassMqtt:
             if description.value_converter:
                 value = description.value_converter(value)
             values[entity_name] = value
-        print('##########', values)
-        raise Exception(values)
         payload = json.dumps(values)
         state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
