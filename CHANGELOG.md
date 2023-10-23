@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.1] (2023-20-23)
+
+* stop sending all values as strings
+
 ## [0.5.0] (2023-08-29)
 
 * Rename entity names to not include device name, this is to align with https://developers.home-assistant.io/blog/2023-057-21-change-naming-mqtt-entities/#naming-of-mqtt-entities

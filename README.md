@@ -119,7 +119,7 @@ Publishing of these entities can be controlled with _--port-entities_.
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.5.0 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.5.1 -t hoymiles_mqtt
 
 Run (replace IP addresses)
 
