@@ -29,7 +29,7 @@ UNIT_WATS_PER_HOUR = 'Wh'
 ZERO = 0
 
 
-def _ignore_on_operating_status(data, _):
+def _ignore_when_no_link(data, _):
     ignore = False
     if getattr(data, 'link_status') != 1:
         ignore = True
@@ -59,21 +59,21 @@ MicroinverterEntities = {
         unit=UNIT_VOLTS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'grid_frequency': EntityDescription(
         device_class=DEVICE_CLASS_FREQUENCY,
         unit=UNIT_HERTZ,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'temperature': EntityDescription(
         device_class=DEVICE_CLASS_TEMPERATURE,
         unit=UNIT_CELSIUS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'operating_status': EntityDescription(),
     'alarm_code': EntityDescription(),
@@ -87,21 +87,21 @@ PortEntities = {
         unit=UNIT_VOLTS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'pv_current': EntityDescription(
         device_class=DEVICE_CLASS_CURRENT,
         unit=UNIT_AMPERES,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'pv_power': EntityDescription(
         device_class=DEVICE_CLASS_POWER,
         unit=UNIT_WATS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
-        ignore_rule=_ignore_on_operating_status,
+        ignore_rule=_ignore_when_no_link,
     ),
     'today_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
