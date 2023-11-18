@@ -1,5 +1,6 @@
 """Hoymiles to MQTT tool."""
 import argparse
+import logging
 
 import configargparse
 from hoymiles_modbus.client import HoymilesModbusTCP
@@ -160,6 +161,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 options = _parse_args()
+logging.basicConfig()
 mqtt_builder = HassMqtt(
     mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
 )

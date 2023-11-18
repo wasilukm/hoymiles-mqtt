@@ -1,5 +1,6 @@
 """MQTT message builders for Home Assistant."""
 import json
+import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -156,6 +157,7 @@ class HassMqtt:
                           entity configuration. Applied only when `expire` flag is set in the entity description.
 
         """
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
@@ -222,6 +224,7 @@ class HassMqtt:
 
     def clear_production_today(self) -> None:
         """Clear todays' energy production."""
+        self._logger.debug('Clear today production cache.')
         self._prod_today_cache = {}
 
     def get_configs(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
@@ -270,9 +273,27 @@ class HassMqtt:
                 self._prod_today_cache[cache_key] = ZERO
             if cache_key not in self._prod_total_cache:
                 self._prod_total_cache[cache_key] = ZERO
-            if microinverter.link_status:
-                self._prod_today_cache[cache_key] = microinverter.today_production
-                self._prod_total_cache[cache_key] = microinverter.total_production
+            if microinverter.operating_status > 0:
+                if microinverter.today_production >= self._prod_today_cache[cache_key]:
+                    self._prod_today_cache[cache_key] = microinverter.today_production
+                else:
+                    self._logger.warning(
+                        f'Today production for {microinverter.serial_number} port {microinverter.port_number} '
+                        f'is smaller ({microinverter.today_production} than cache '
+                        f'({self._prod_today_cache[cache_key]}). '
+                        f'Ignoring the fault value.'
+                    )
+                    microinverter.today_production = self._prod_today_cache[cache_key]
+                if microinverter.total_production >= self._prod_total_cache[cache_key]:
+                    self._prod_total_cache[cache_key] = microinverter.total_production
+                else:
+                    self._logger.warning(
+                        f'Total production for {microinverter.serial_number} port {microinverter.port_number} '
+                        f'is smaller ({microinverter.total_production} than cache '
+                        f'({self._prod_total_cache[cache_key]}). '
+                        f'Ignoring the fault value.'
+                    )
+                    microinverter.total_production = self._prod_total_cache[cache_key]
 
     def _process_plant_data(self, plant_data: PlantData) -> None:
         self._update_cache(plant_data)
