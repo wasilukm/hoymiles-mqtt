@@ -255,6 +255,7 @@ class HassMqtt:
         port: Optional[int] = None,
     ) -> Tuple[str, str]:
         values = {}
+        self._logger.warning(entity_data)
         for entity_name, description in entity_definitions.items():
             value = getattr(entity_data, entity_name)
             if description.ignore_rule and description.ignore_rule(entity_data, entity_name):
