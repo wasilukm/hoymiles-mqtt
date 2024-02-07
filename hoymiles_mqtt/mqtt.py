@@ -36,7 +36,7 @@ class MqttPublisher:
         if mqtt_tls:
             self._tls = {'tls_version': ssl.PROTOCOL_TLS_CLIENT}
             if mqtt_tls_insecure:
-                self._tls = {'insecure': True, 'tls_version': ssl.PROTOCOL_TLS_CLIENT}
+                self._tls['insecure'] = True
 
     def publish(self, topic: str, message: str, retain: bool = False) -> None:
         """Publish a message to the given MQTT topic.
