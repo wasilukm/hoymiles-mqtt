@@ -29,7 +29,7 @@ def _parse_args() -> argparse.Namespace:
         default=DEFAULT_MQTT_PORT,
         type=int,
         env_var='MQTT_PORT',
-        help='MQTT broker port',
+        help='MQTT broker port. Note that when using TLS connection you may need to specify port 8883',
     )
     cfg_parser.add('--mqtt-user', required=False, type=str, env_var='MQTT_USER', help='User name for MQTT broker')
     cfg_parser.add('--mqtt-password', required=False, type=str, env_var='MQTT_PASSWORD', help='Password to MQTT broker')
@@ -47,7 +47,10 @@ def _parse_args() -> argparse.Namespace:
         default=False,
         action='store_true',
         env_var='MQTT_TLS_INSECURE',
-        help='MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option)',
+        help=(
+            'MQTT TLS insecure connection (only relevant when using with the '
+            '--mqtt-tls option). Do not use in production environments.'
+        ),
     )
     cfg_parser.add('--dtu-host', required=True, type=str, env_var='DTU_HOST', help='Address of Hoymiles DTU')
     cfg_parser.add(
