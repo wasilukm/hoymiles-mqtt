@@ -163,29 +163,39 @@ def _parse_args() -> argparse.Namespace:
     return cfg_parser.parse_args()
 
 
-options = _parse_args()
-logging.basicConfig()
-mqtt_builder = HassMqtt(
-    mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
-)
-microinverter_type = getattr(MicroinverterType, options.microinverter_type)
-modbus_client = HoymilesModbusTCP(
-    host=options.dtu_host, port=options.dtu_port, microinverter_type=microinverter_type, unit_id=options.modbus_unit_id
-)
-modbus_client.comm_params.timeout = options.comm_timeout
-modbus_client.comm_params.retries = options.comm_retries
-modbus_client.comm_params.retry_on_empty = options.comm_retry_on_empty
-modbus_client.comm_params.close_comm_on_error = options.comm_close_comm_on_error
-modbus_client.comm_params.strict = options.comm_strict
-modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay
+def main():
+    """Main entry point."""
 
-mqtt_publisher = MqttPublisher(
-    mqtt_broker=options.mqtt_broker,
-    mqtt_port=options.mqtt_port,
-    mqtt_user=options.mqtt_user,
-    mqtt_password=options.mqtt_password,
-    mqtt_tls=options.mqtt_tls,
-    mqtt_tls_insecure=options.mqtt_tls_insecure,
-)
-query_job = HoymilesQueryJob(mqtt_builder=mqtt_builder, mqtt_publisher=mqtt_publisher, modbus_client=modbus_client)
-run_periodic_job(period=options.query_period, job=query_job.execute)
+    options = _parse_args()
+    logging.basicConfig()
+    mqtt_builder = HassMqtt(
+        mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
+    )
+    microinverter_type = getattr(MicroinverterType, options.microinverter_type)
+    modbus_client = HoymilesModbusTCP(
+        host=options.dtu_host,
+        port=options.dtu_port,
+        microinverter_type=microinverter_type,
+        unit_id=options.modbus_unit_id,
+    )
+    modbus_client.comm_params.timeout = options.comm_timeout
+    modbus_client.comm_params.retries = options.comm_retries
+    modbus_client.comm_params.retry_on_empty = options.comm_retry_on_empty
+    modbus_client.comm_params.close_comm_on_error = options.comm_close_comm_on_error
+    modbus_client.comm_params.strict = options.comm_strict
+    modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay
+
+    mqtt_publisher = MqttPublisher(
+        mqtt_broker=options.mqtt_broker,
+        mqtt_port=options.mqtt_port,
+        mqtt_user=options.mqtt_user,
+        mqtt_password=options.mqtt_password,
+        mqtt_tls=options.mqtt_tls,
+        mqtt_tls_insecure=options.mqtt_tls_insecure,
+    )
+    query_job = HoymilesQueryJob(mqtt_builder=mqtt_builder, mqtt_publisher=mqtt_publisher, modbus_client=modbus_client)
+    run_periodic_job(period=options.query_period, job=query_job.execute)
+
+
+if __name__ == '__main__':
+    main()
