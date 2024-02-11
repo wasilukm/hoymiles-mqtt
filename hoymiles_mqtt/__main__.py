@@ -165,7 +165,6 @@ def _parse_args() -> argparse.Namespace:
 
 def main():
     """Main entry point."""
-
     options = _parse_args()
     logging.basicConfig()
     mqtt_builder = HassMqtt(
