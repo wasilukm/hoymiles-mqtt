@@ -79,6 +79,9 @@ Publishing of these entities can be controlled with _--port-entities_.
                             User name for MQTT broker [env var: MQTT_USER] (default: None)
       --mqtt-password MQTT_PASSWORD
                             Password to MQTT broker [env var: MQTT_PASSWORD] (default: None)
+      --mqtt-tls            MQTT TLS connection [env var: MQTT_TLS] (default: False)
+      --mqtt-tls-insecure   MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option) [env var:
+                            MQTT_TLS_INSECURE] (default: False)
       --dtu-host DTU_HOST   Address of Hoymiles DTU [env var: DTU_HOST] (default: None)
       --dtu-port DTU_PORT   DTU modbus port [env var: DTU_PORT] (default: 502)
       --modbus-unit-id MODBUS_UNIT_ID

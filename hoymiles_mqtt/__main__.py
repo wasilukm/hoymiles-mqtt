@@ -32,6 +32,22 @@ def _parse_args() -> argparse.Namespace:
     )
     cfg_parser.add('--mqtt-user', required=False, type=str, env_var='MQTT_USER', help='User name for MQTT broker')
     cfg_parser.add('--mqtt-password', required=False, type=str, env_var='MQTT_PASSWORD', help='Password to MQTT broker')
+    cfg_parser.add(
+        '--mqtt-tls',
+        required=False,
+        default=False,
+        action='store_true',
+        env_var='MQTT_TLS',
+        help='MQTT TLS connection',
+    )
+    cfg_parser.add(
+        '--mqtt-tls-insecure',
+        required=False,
+        default=False,
+        action='store_true',
+        env_var='MQTT_TLS_INSECURE',
+        help='MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option)',
+    )
     cfg_parser.add('--dtu-host', required=True, type=str, env_var='DTU_HOST', help='Address of Hoymiles DTU')
     cfg_parser.add(
         '--dtu-port', required=False, type=int, default=DEFAULT_MODBUS_PORT, env_var='DTU_PORT', help='DTU modbus port'
@@ -163,6 +179,8 @@ mqtt_publisher = MqttPublisher(
     mqtt_port=options.mqtt_port,
     mqtt_user=options.mqtt_user,
     mqtt_password=options.mqtt_password,
+    mqtt_tls=options.mqtt_tls,
+    mqtt_tls_insecure=options.mqtt_tls_insecure,
 )
 query_job = HoymilesQueryJob(mqtt_builder=mqtt_builder, mqtt_publisher=mqtt_publisher, modbus_client=modbus_client)
 run_periodic_job(period=options.query_period, job=query_job.execute)
