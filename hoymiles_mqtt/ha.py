@@ -1,7 +1,8 @@
 """MQTT message builders for Home Assistant."""
 import json
+import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -29,6 +30,14 @@ UNIT_WATS_PER_HOUR = 'Wh'
 ZERO = 0
 
 
+def _ignore_when_zero(data, entity_name):
+    return getattr(data, entity_name) == ZERO
+
+
+def _ignore_when_zero_operating_status(data, _):
+    return _ignore_when_zero(data, 'operating_status')
+
+
 @dataclass
 class EntityDescription:
     """Common entity properties."""
@@ -37,23 +46,32 @@ class EntityDescription:
     device_class: Optional[str] = None
     unit: Optional[str] = None
     state_class: Optional[str] = None
-    ignored_value: Optional[Any] = None
+    ignore_rule: Optional[Callable] = None
     expire: Optional[bool] = True
     value_converter: Optional[Callable] = None
 
 
 MicroinverterEntities = {
     'grid_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_VOLTAGE,
+        unit=UNIT_VOLTS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'grid_frequency': EntityDescription(
-        device_class=DEVICE_CLASS_FREQUENCY, unit=UNIT_HERTZ, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_FREQUENCY,
+        unit=UNIT_HERTZ,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'temperature': EntityDescription(
         device_class=DEVICE_CLASS_TEMPERATURE,
         unit=UNIT_CELSIUS,
         state_class=STATE_CLASS_MEASUREMENT,
         value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'operating_status': EntityDescription(),
     'alarm_code': EntityDescription(),
@@ -63,13 +81,25 @@ MicroinverterEntities = {
 
 PortEntities = {
     'pv_voltage': EntityDescription(
-        device_class=DEVICE_CLASS_VOLTAGE, unit=UNIT_VOLTS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_VOLTAGE,
+        unit=UNIT_VOLTS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'pv_current': EntityDescription(
-        device_class=DEVICE_CLASS_CURRENT, unit=UNIT_AMPERES, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_CURRENT,
+        unit=UNIT_AMPERES,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'pv_power': EntityDescription(
-        device_class=DEVICE_CLASS_POWER, unit=UNIT_WATS, state_class=STATE_CLASS_MEASUREMENT, value_converter=float
+        device_class=DEVICE_CLASS_POWER,
+        unit=UNIT_WATS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        value_converter=float,
+        ignore_rule=_ignore_when_zero_operating_status,
     ),
     'today_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
@@ -93,14 +123,14 @@ DtuEntities = {
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
-        ignored_value=ZERO,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
     'total_production': EntityDescription(
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
-        ignored_value=ZERO,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
     'alarm_flag': EntityDescription(
@@ -127,6 +157,7 @@ class HassMqtt:
                           entity configuration. Applied only when `expire` flag is set in the entity description.
 
         """
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
@@ -164,6 +195,7 @@ class HassMqtt:
         port_prefix = f'port_{port}' if port is not None else ''
         entity_prefix = port_prefix if port_prefix else device_name
         for entity_name, entity_definition in entity_definitions.items():
+            state_topic = self._get_state_topic(device_serial_number, port)
             config_payload = {
                 "device": {
                     "name": f"{device_name}_{device_serial_number}",
@@ -172,8 +204,10 @@ class HassMqtt:
                 },
                 "name": f'{port_prefix}_{entity_name}' if port_prefix else entity_name,
                 "unique_id": f"hoymiles_mqtt_{entity_prefix}_{device_serial_number}_{entity_name}",
-                "state_topic": self._get_state_topic(device_serial_number, port),
-                "value_template": "{{ value_json.%s }}" % entity_name,
+                "state_topic": state_topic,
+                "value_template": f"{{{{ iif(value_json.{entity_name} is defined, value_json.{entity_name}, '') }}}}",
+                "availability_topic": state_topic,
+                "availability_template": f"{{{{ iif(value_json.{entity_name} is defined, 'online', 'offline') }}}}",
             }
             if entity_definition.device_class:
                 config_payload['device_class'] = entity_definition.device_class
@@ -190,6 +224,7 @@ class HassMqtt:
 
     def clear_production_today(self) -> None:
         """Clear todays' energy production."""
+        self._logger.debug('Clear today production cache.')
         self._prod_today_cache = {}
 
     def get_configs(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
@@ -222,7 +257,7 @@ class HassMqtt:
         values = {}
         for entity_name, description in entity_definitions.items():
             value = getattr(entity_data, entity_name)
-            if description.ignored_value is not None and value == description.ignored_value:
+            if description.ignore_rule and description.ignore_rule(entity_data, entity_name):
                 continue
             if description.value_converter:
                 value = description.value_converter(value)
@@ -238,9 +273,27 @@ class HassMqtt:
                 self._prod_today_cache[cache_key] = ZERO
             if cache_key not in self._prod_total_cache:
                 self._prod_total_cache[cache_key] = ZERO
-            if microinverter.link_status:
-                self._prod_today_cache[cache_key] = microinverter.today_production
-                self._prod_total_cache[cache_key] = microinverter.total_production
+            if microinverter.operating_status > 0:
+                if microinverter.today_production >= self._prod_today_cache[cache_key]:
+                    self._prod_today_cache[cache_key] = microinverter.today_production
+                else:
+                    self._logger.warning(
+                        f'Today production for {microinverter.serial_number} port {microinverter.port_number} '
+                        f'is smaller ({microinverter.today_production} than cache '
+                        f'({self._prod_today_cache[cache_key]}). '
+                        f'Ignoring the fault value.'
+                    )
+                    microinverter.today_production = self._prod_today_cache[cache_key]
+                if microinverter.total_production >= self._prod_total_cache[cache_key]:
+                    self._prod_total_cache[cache_key] = microinverter.total_production
+                else:
+                    self._logger.warning(
+                        f'Total production for {microinverter.serial_number} port {microinverter.port_number} '
+                        f'is smaller ({microinverter.total_production} than cache '
+                        f'({self._prod_total_cache[cache_key]}). '
+                        f'Ignoring the fault value.'
+                    )
+                    microinverter.total_production = self._prod_total_cache[cache_key]
 
     def _process_plant_data(self, plant_data: PlantData) -> None:
         self._update_cache(plant_data)
