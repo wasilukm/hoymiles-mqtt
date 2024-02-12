@@ -53,6 +53,13 @@ A micro-inverter can support multiple ports (PV panels), their states are repres
 
 Publishing of these entities can be controlled with _--port-entities_.
 
+The following entities are sent only when the inverter's operating status is greater
+than 0: grid_voltage, grid_frequency, temperature, pv_voltage, pv_current, pv_power.
+
+Additionally, today_production and total_production are updated only when the inverter's
+operating status is greater than 0 and the new value is greater than the previous one.
+This is to prevent drops in measurements which shall be only increasing.
+
 ## Usage
 
 ### Prerequisites
