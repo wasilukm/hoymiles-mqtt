@@ -2,7 +2,7 @@
 
 __author__ = """Foo Bar"""
 __email__ = 'foo@bar.com'
-__version__ = '0.5.1'
+__version__ = '0.6.0'
 
 MI_ENTITIES = [
     'grid_voltage',
