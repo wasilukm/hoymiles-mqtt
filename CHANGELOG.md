@@ -1,6 +1,12 @@
 # Changelog
 
-## [0.5.1] (2023-20-23)
+## [0.6.0] (2024-02-13)
+
+* do not send measurements when operating status is 0 (prevent sending zeros when inverter is off)
+* do not send today_production and total_production when a new value is not greater than the previous
+* add support for TLS communication with MQTT broker
+
+## [0.5.1] (2023-11-23)
 
 * stop sending all values as strings
 
