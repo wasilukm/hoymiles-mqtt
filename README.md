@@ -69,26 +69,25 @@ This is to prevent drops in measurements which shall be only increasing.
 - MQTT integration enabled in Home Assistant, https://www.home-assistant.io/integrations/mqtt/
 
 ### From command line
-    usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] --dtu-host DTU_HOST [--dtu-port DTU_PORT]
-                                    [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
+    usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] [--mqtt-tls] [--mqtt-tls-insecure] --dtu-host DTU_HOST
+                                    [--dtu-port DTU_PORT] [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
                                     [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]] [--expire-after EXPIRE_AFTER] [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES] [--comm-retry-on-empty COMM_RETRY_ON_EMPTY]
                                     [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT] [--comm-reconnect-delay COMM_RECONNECT_DELAY]
 
-    options:
+    optional arguments:
       -h, --help            show this help message and exit
       -c CONFIG, --config CONFIG
                             Config file path (default: None)
       --mqtt-broker MQTT_BROKER
                             Address of MQTT broker [env var: MQTT_BROKER] (default: None)
       --mqtt-port MQTT_PORT
-                            MQTT broker port [env var: MQTT_PORT] (default: 1883)
+                            MQTT broker port. Note that when using TLS connection you may need to specify port 8883 [env var: MQTT_PORT] (default: 1883)
       --mqtt-user MQTT_USER
                             User name for MQTT broker [env var: MQTT_USER] (default: None)
       --mqtt-password MQTT_PASSWORD
                             Password to MQTT broker [env var: MQTT_PASSWORD] (default: None)
       --mqtt-tls            MQTT TLS connection [env var: MQTT_TLS] (default: False)
-      --mqtt-tls-insecure   MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option) [env var:
-                            MQTT_TLS_INSECURE] (default: False)
+      --mqtt-tls-insecure   MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option). Do not use in production environments. [env var: MQTT_TLS_INSECURE] (default: False)
       --dtu-host DTU_HOST   Address of Hoymiles DTU [env var: DTU_HOST] (default: None)
       --dtu-port DTU_PORT   DTU modbus port [env var: DTU_PORT] (default: 502)
       --modbus-unit-id MODBUS_UNIT_ID
@@ -105,8 +104,8 @@ This is to prevent drops in measurements which shall be only increasing.
                             'pv_power', 'today_production', 'total_production'])
       --expire-after EXPIRE_AFTER
                             Defines number of seconds after which DTU or microinverter entities expire, if updates are not received (for example due to communication issues). After expiry, entities become unavailable in Home
-                            Assistant.By default it is 0, which means that entities never expire. When different than 0, the value shallbe greater than the query period. This setting does not apply to entities that represent
-                            a total amount such as daily energy production (they never expire). [env var: EXPIRE_AFTER] (default: 0)
+                            Assistant.By default it is 0, which means that entities never expire. When different than 0, the value shallbe greater than the query period. This setting does not apply to entities that represent a
+                            total amount such as daily energy production (they never expire). [env var: EXPIRE_AFTER] (default: 0)
       --comm-timeout COMM_TIMEOUT
                             Additional low level modbus communication parameter - request timeout. [env var: COMM_TIMEOUT] (default: 3)
       --comm-retries COMM_RETRIES
@@ -129,7 +128,7 @@ This is to prevent drops in measurements which shall be only increasing.
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.5.1 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.6.0 -t hoymiles_mqtt
 
 Run (replace IP addresses)
 
