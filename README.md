@@ -14,15 +14,15 @@ Send data from Hoymiles photovoltaic installation to Home Assistant through MQTT
 * PyPI: <https://pypi.org/project/hoymiles-mqtt/>
 * Free software: MIT
 
-The tool periodically communicates with Hoymiles DTU (Pro) trough ModbusTCP and sends gathered data to MQTT broker.
+The tool periodically communicates with Hoymiles DTU (Pro) through ModbusTCP and sends gathered data to MQTT broker.
 Data to MQTT broker are sent with topics that can be recognized by Home Assistant.
-In a result DTU and each micro-inverter can be represented in Home Assistant as a separate device with set of entities. Example:
+In a result DTU and each micro-inverter can be represented in Home Assistant as separate device with a set of entities. Example:
 
 ![MQTT Devices](/docs/mqtt_devices.png)
 
 ![MQTT Entities](/docs/mqtt_entities.png)
 
-DTU device represent overall data for the installation:
+DTU device represents overall data for the installation:
 - pv_power - current power - sum from all micro-inverters
 - today_production - today energy production - sum from all micro-inverters, for each micro-inverter last known
   good value is cached to prevent disturbances in statistics when part of the installation is temporarily off
@@ -85,7 +85,7 @@ This is to prevent drops in measurements which shall be only increasing.
       --mqtt-user MQTT_USER
                             User name for MQTT broker [env var: MQTT_USER] (default: None)
       --mqtt-password MQTT_PASSWORD
-                            Password to MQTT broker [env var: MQTT_PASSWORD] (default: None)
+                            Password for MQTT broker [env var: MQTT_PASSWORD] (default: None)
       --mqtt-tls            MQTT TLS connection [env var: MQTT_TLS] (default: False)
       --mqtt-tls-insecure   MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option). Do not use in production environments. [env var: MQTT_TLS_INSECURE] (default: False)
       --dtu-host DTU_HOST   Address of Hoymiles DTU [env var: DTU_HOST] (default: None)
@@ -138,18 +138,18 @@ Please note, depending on the needs more options can be specified with _-e_. See
 
 ## Troubleshooting
 
-  - Hoymiles DUTs are not the most stable devices. Therefore, from time to time the tool may not be able
-    to connect to DTU and will print the following exception:
+- Hoymiles DTUs are not the most stable devices. Therefore, from time to time the tool may not be able
+  to connect to DTU and will print the following exception:
 
-    >Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
+  >Modbus Error: [Invalid Message] No response received, expected at least 8 bytes (0 received)
 
-    The tool will continue its operation and try to communicate with DTU in the next period.
+  The tool will continue its operation and try to communicate with DTU in the next period.
 
-    If the exception is constantly repeating and data is not refreshed in Home Assistant:
-      - power cycle DTU
-      - try to update DTU's firmware
+  If the exception is constantly repeating and data is not refreshed in Home Assistant:
+    - power cycle DTU
+    - try to update DTU's firmware
 
-  - `libseccomp2` library may be missing on some operating systems, ensure the library is installed
+- `libseccomp2` library may be missing on some operating systems, ensure the library is installed
 
 
 ## Credits
