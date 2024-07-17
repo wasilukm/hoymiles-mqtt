@@ -16,6 +16,24 @@ DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
 
+logger = logging.getLogger(__name__)
+
+
+def _setup_logger(options: configargparse.Namespace) -> None:
+    log_level_parameter = options.log_level
+    if log_level_parameter.upper() not in logging._nameToLevel:
+        raise ValueError("Unkown logging level '{}'!".format(log_level_parameter))
+    log_level = logging._nameToLevel[log_level_parameter.upper()]
+
+    # '%(asctime)s : %(levelname)s : %(message)s'
+    # "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(module)s] %(message)s"
+    logging.basicConfig(format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
+                        level=log_level,
+                        filename=options.log_file)
+    # Modbus is a noisy library. Especially on DEBUG-level.
+    pymodbus_log = logging.getLogger('pymodbus')
+    pymodbus_log.setLevel(logging.INFO)
+
 
 def _parse_args() -> argparse.Namespace:
     cfg_parser = configargparse.ArgParser(
@@ -160,13 +178,29 @@ def _parse_args() -> argparse.Namespace:
         env_var='COMM_RECONNECT_DELAY',
         help="Additional low level modbus communication parameter - delay in milliseconds before reconnecting.",
     )
+    cfg_parser.add(
+        '--log-level',
+        required=False,
+        type=str,
+        default=logging.WARNING,
+        env_var='LOG_LEVEL',
+        help="Python logger log level. Default: WARNING",
+    )
+    cfg_parser.add(
+        '--log-file',
+        required=False,
+        type=str,
+        default=None,
+        env_var='LOG_FILE',
+        help="Python logger log file. Default: not writing into a file",
+    )
     return cfg_parser.parse_args()
 
 
 def main():
     """Main entry point."""
     options = _parse_args()
-    logging.basicConfig()
+    _setup_logger(options)
     mqtt_builder = HassMqtt(
         mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
     )
