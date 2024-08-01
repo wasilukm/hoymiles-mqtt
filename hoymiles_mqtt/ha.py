@@ -6,6 +6,8 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
+logger = logging.getLogger(__name__)
+
 PLATFORM_SENSOR = 'sensor'
 PLATFORM_BINARY_SENSOR = 'binary_sensor'
 

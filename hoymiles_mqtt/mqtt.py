@@ -1,7 +1,10 @@
 """MQTT related interfaces."""
 import ssl
+import logging
 
 from paho.mqtt.publish import single as publish_single
+
+logger = logging.getLogger(__name__)
 
 
 class MqttPublisher:
