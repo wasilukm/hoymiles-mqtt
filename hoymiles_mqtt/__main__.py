@@ -32,6 +32,8 @@ def _setup_logger(options: configargparse.Namespace) -> None:
     # Modbus is a noisy library. Especially on DEBUG-level.
     pymodbus_log = logging.getLogger('pymodbus')
     pymodbus_log.setLevel(logging.INFO)
+    paho_log = logging.getLogger('paho')
+    paho_log.setLevel(logging.INFO)
 
 
 def _parse_args() -> argparse.Namespace:
