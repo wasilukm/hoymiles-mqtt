@@ -78,19 +78,18 @@ class HoymilesQueryJob:
                     mqtt_broker = "mqtt://{}:{}/{}".format(self._mqtt_publisher._mqtt_broker,
                                                            self._mqtt_publisher._mqtt_port,
                                                            topic)
-                    logger.debug("Published data into {}".format(mqtt_broker))
+                    logger.debug("Published data into %s", mqtt_broker)
             except Exception:
                 logger.exception("Failed to publish data from DTU. Unknown failure type.")
 
-        self._lock.release()
-
-        if plant_data:
-            logger.info("DTU data received and published. "
-                        "{} messages into mqtt://{}:{}".format(publish_count,
-                                                               self._mqtt_publisher._mqtt_broker,
-                                                               self._mqtt_publisher._mqtt_port))
+            logger.info("DTU data received and published. %s messages into mqtt://%s:%d",
+                        publish_count,
+                        self._mqtt_publisher._mqtt_broker,
+                        self._mqtt_publisher._mqtt_port)
         else:
             logger.warning("No DTU data received!")
+
+        self._lock.release()
 
 
 def run_periodic_job(period: int, job: Callable) -> None:

@@ -20,13 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 def _setup_logger(options: configargparse.Namespace) -> None:
-    log_level_parameter = options.log_level
-    if log_level_parameter.upper() not in logging._nameToLevel:
-        raise ValueError("Unkown logging level '{}'!".format(log_level_parameter))
-    log_level = logging._nameToLevel[log_level_parameter.upper()]
+    log_level = logging.getLevelName(options.log_level)
+    if not log_level:
+        raise ValueError("Unkown logging level '{}'!".format(options.log_level))
 
-    # '%(asctime)s : %(levelname)s : %(message)s'
-    # "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(module)s] %(message)s"
     logging.basicConfig(format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
                         level=log_level,
                         filename=options.log_file)
@@ -182,8 +179,8 @@ def _parse_args() -> argparse.Namespace:
         '--log-level',
         required=False,
         type=str,
-        default=logging.WARNING,
-        env_var='LOG_LEVEL',
+        default='WARNING',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         help="Python logger log level. Default: WARNING",
     )
     cfg_parser.add(
