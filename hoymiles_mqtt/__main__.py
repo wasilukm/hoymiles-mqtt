@@ -24,9 +24,11 @@ def _setup_logger(options: configargparse.Namespace) -> None:
     if not log_level:
         raise ValueError("Unkown logging level '{}'!".format(options.log_level))
 
-    logging.basicConfig(format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
-                        level=log_level,
-                        filename=options.log_file)
+    logging.basicConfig(
+        format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
+        level=log_level,
+        filename=options.log_file,
+    )
     # Modbus is a noisy library. Especially on DEBUG-level.
     pymodbus_log = logging.getLogger('pymodbus')
     pymodbus_log.setLevel(logging.INFO)
@@ -181,6 +183,7 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         default='WARNING',
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        env_var='LOG_LEVEL',
         help="Python logger log level. Default: WARNING",
     )
     cfg_parser.add(
