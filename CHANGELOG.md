@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0] (2024-08-10)
+
+* improved logging capabilities (thanks to @HQJaTu)
+  * Added switch --log-level
+  * Added switch --log-file
+* Separated retrieving data from DTU via M-bus and MQTT publishing with separate exception handling (thanks to @HQJaTu)
+* Added handling for Ctrl-C keypress to stop execution (thanks to @HQJaTu)
+* fixed spelling mistakes in readme.md (thanks to @weitheng)
+
 ## [0.6.0] (2024-02-13)
 
 * do not send measurements when operating status is 0 (prevent sending zeros when inverter is off)

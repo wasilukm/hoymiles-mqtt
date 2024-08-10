@@ -72,9 +72,10 @@ This is to prevent drops in measurements which shall be only increasing.
     usage: python3 -m hoymiles_mqtt [-h] [-c CONFIG] --mqtt-broker MQTT_BROKER [--mqtt-port MQTT_PORT] [--mqtt-user MQTT_USER] [--mqtt-password MQTT_PASSWORD] [--mqtt-tls] [--mqtt-tls-insecure] --dtu-host DTU_HOST
                                     [--dtu-port DTU_PORT] [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD] [--microinverter-type {MI,HM}] [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
                                     [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]] [--expire-after EXPIRE_AFTER] [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES] [--comm-retry-on-empty COMM_RETRY_ON_EMPTY]
-                                    [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT] [--comm-reconnect-delay COMM_RECONNECT_DELAY]
+                                    [--comm-close-comm-on-error COMM_CLOSE_COMM_ON_ERROR] [--comm-strict COMM_STRICT] [--comm-reconnect-delay COMM_RECONNECT_DELAY] [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+                                    [--log-file LOG_FILE]
 
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       -c CONFIG, --config CONFIG
                             Config file path (default: None)
@@ -85,7 +86,7 @@ This is to prevent drops in measurements which shall be only increasing.
       --mqtt-user MQTT_USER
                             User name for MQTT broker [env var: MQTT_USER] (default: None)
       --mqtt-password MQTT_PASSWORD
-                            Password for MQTT broker [env var: MQTT_PASSWORD] (default: None)
+                            Password to MQTT broker [env var: MQTT_PASSWORD] (default: None)
       --mqtt-tls            MQTT TLS connection [env var: MQTT_TLS] (default: False)
       --mqtt-tls-insecure   MQTT TLS insecure connection (only relevant when using with the --mqtt-tls option). Do not use in production environments. [env var: MQTT_TLS_INSECURE] (default: False)
       --dtu-host DTU_HOST   Address of Hoymiles DTU [env var: DTU_HOST] (default: None)
@@ -118,17 +119,19 @@ This is to prevent drops in measurements which shall be only increasing.
                             Additional low level modbus communication parameter - strict timing, 1.5 character between requests. [env var: COMM_STRICT] (default: True)
       --comm-reconnect-delay COMM_RECONNECT_DELAY
                             Additional low level modbus communication parameter - delay in milliseconds before reconnecting. [env var: COMM_RECONNECT_DELAY] (default: 300000)
+      --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                            Python logger log level. Default: WARNING [env var: LOG_LEVEL] (default: WARNING)
+      --log-file LOG_FILE   Python logger log file. Default: not writing into a file [env var: LOG_FILE] (default: None)
 
-    Args that start with '--' (eg. --mqtt-broker) can also be set in a config file (specified via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at https://goo.gl/R74nmi). If an
-    arg is specified in more than one place, then commandline values override environment variables which override config file values which override defaults.
-
+    Args that start with '--' can also be set in a config file (specified via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at https://goo.gl/R74nmi). In general, command-line
+    values override environment variables which override config file values which override defaults.
 
 
 ### Docker
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.6.0 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.7.0 -t hoymiles_mqtt
 
 Run (replace IP addresses)
 
