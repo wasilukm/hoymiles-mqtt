@@ -3,6 +3,7 @@ import json
 import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
+import time
 
 from hoymiles_modbus.datatypes import PlantData
 
@@ -146,8 +147,11 @@ DtuEntities = {
 class HassMqtt:
     """MQTT message builder for Home Assistant."""
 
+    RESET_HOUR: int = 22
+
     def __init__(
-        self, mi_entities: List[str], port_entities: List[str], post_process: bool = True, expire_after: int = 0
+        self, mi_entities: List[str], port_entities: List[str],
+        post_process: bool = True, expire_after: int = 0
     ) -> None:
         """Initialize the object.
 
@@ -174,6 +178,7 @@ class HassMqtt:
         for entity_name, description in PortEntities.items():
             if entity_name in port_entities:
                 self._port_entities[entity_name] = description
+        self._last_daily_reset: Optional[time.struct_time] = None
 
     @staticmethod
     def _get_config_topic(platform: str, device_serial: str, entity_name) -> str:
@@ -228,6 +233,7 @@ class HassMqtt:
         """Clear todays' energy production."""
         self._logger.debug('Clear today production cache.')
         self._prod_today_cache = {}
+        self._last_daily_reset = time.localtime()
 
     def get_configs(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
         """Get MQTT config messages for given data from DTU.
@@ -269,33 +275,90 @@ class HassMqtt:
         return state_topic, payload
 
     def _update_cache(self, plant_data: PlantData) -> None:
-        for microinverter in plant_data.microinverter_data:
-            cache_key = (microinverter.serial_number, microinverter.port_number)
-            if cache_key not in self._prod_today_cache:
-                self._prod_today_cache[cache_key] = ZERO
-            if cache_key not in self._prod_total_cache:
-                self._prod_total_cache[cache_key] = ZERO
+        """
+        Update plant data to cache.
+        While doing the update, take daily production reset occurring around hour 22 into account.
+        :param plant_data: Plant production data as retrieved from DTU
+        :return: None, plant_data will be altered, if necessary
+        """
+        microinverters = {}
+        data_to_cache = {}
+        cache_failure_cnt = 0
+        for idx, microinverter in enumerate(plant_data.microinverter_data):
+            microinverters[idx] = microinverter
             if microinverter.operating_status > 0:
-                if microinverter.today_production >= self._prod_today_cache[cache_key]:
-                    self._prod_today_cache[cache_key] = microinverter.today_production
-                else:
-                    self._logger.warning(
-                        f'Today production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.today_production} than cache '
-                        f'({self._prod_today_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
-                    )
-                    microinverter.today_production = self._prod_today_cache[cache_key]
+                cache_key = (microinverter.serial_number, microinverter.port_number)
+
+                # Today data will be handled later
+                data_to_cache[idx] = microinverter.today_production
+                if (cache_key in self._prod_today_cache and
+                    microinverter.today_production < self._prod_today_cache[cache_key]):
+                    cache_failure_cnt += 1
+                    logger.debug("Today production cache failure detected! Microinverter %s, port %d",
+                                 microinverter.serial_number, microinverter.port_number)
+
+                # Total data is handled on this go as there is no daily reset on it
+                if cache_key not in self._prod_total_cache:
+                    self._prod_total_cache[cache_key] = ZERO
                 if microinverter.total_production >= self._prod_total_cache[cache_key]:
                     self._prod_total_cache[cache_key] = microinverter.total_production
                 else:
                     self._logger.warning(
-                        f'Total production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.total_production} than cache '
-                        f'({self._prod_total_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
+                        'Total production for microinverter %s, port %d '
+                        'is smaller (%d) than cached (%d). Using cached value.',
+                        microinverter.serial_number, microinverter.port_number,
+                        microinverter.total_production, self._prod_total_cache[cache_key]
                     )
                     microinverter.total_production = self._prod_total_cache[cache_key]
+
+        # Estimate if today production data was retrieved.
+        # Reset today production cache only once per day.
+        now = time.localtime()
+        running_hour = now.tm_hour
+        running_during_reset_hour = running_hour == HassMqtt.RESET_HOUR
+        running_after_reset_hour = running_hour > HassMqtt.RESET_HOUR
+        if not data_to_cache:
+            # No today production data received.
+            # Maybe it's after sundown.
+            if ((running_during_reset_hour or running_after_reset_hour) and
+                (not self._last_daily_reset or
+                self._last_daily_reset.tm_yday < now.tm_yday)):
+                logger.info("No production data received. Today production reset hour past. Reset cache.")
+                self.clear_production_today()
+            return
+
+        # Depending on DTU's geographical location, on high latitudes, during summer there will be production
+        # during reset hour of 22. Obviously, this doesn't happen on lower latitudes or other seasons.
+        # If all data points failed caching, assume reset hour passed on all DTUs.
+        # Note: A solar panel installation typically contains multiple DTUs. Any DTU can reset daily or not.
+        if (cache_failure_cnt == len(data_to_cache) and
+            running_during_reset_hour and
+            (not self._last_daily_reset or
+            self._last_daily_reset.tm_yday < now.tm_yday)):
+            logger.info("Today production reset detected")
+            self.clear_production_today()
+        else:
+            logger.warning("Debug: %d data points, %d failures, running during reset hour: %d",
+                           len(data_to_cache), cache_failure_cnt,
+                           running_during_reset_hour)
+
+        # Update today production cache or alter return value.
+        for idx, today_production in data_to_cache.items():
+            microinverter = microinverters[idx]
+            cache_key = (microinverter.serial_number, microinverter.port_number)
+
+            if cache_key not in self._prod_today_cache:
+                self._prod_today_cache[cache_key] = ZERO
+            if today_production >= self._prod_today_cache[cache_key]:
+                self._prod_today_cache[cache_key] = today_production
+            else:
+                self._logger.warning(
+                    'Today production for microinverter %s, port %d '
+                    'is smaller (%d) than cached (%d). Using cached value.',
+                    cache_key[0], cache_key[1],
+                    today_production, self._prod_today_cache[cache_key]
+                )
+                microinverter.today_production = self._prod_today_cache[cache_key]
 
     def _process_plant_data(self, plant_data: PlantData) -> None:
         self._update_cache(plant_data)
