@@ -1,7 +1,7 @@
 """Runners."""
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional
 import logging
 
 from pymodbus import exceptions as pymodbus_exceptions
@@ -11,8 +11,6 @@ from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 
 logger = logging.getLogger(__name__)
-
-RESET_HOUR = 23
 
 
 class HoymilesQueryJob:
@@ -33,16 +31,13 @@ class HoymilesQueryJob:
         self._mqtt_publisher: MqttPublisher = mqtt_publisher
         self._modbus_client: HoymilesModbusTCP = modbus_client
         self._mqtt_configured: bool = False
+        self._last_reset: Optional[int] = None
 
     def execute(self):
         """Get data from DTU and publish to MQTT broker."""
         is_acquired = self._lock.acquire(blocking=False)
         if not is_acquired:
             return
-
-        if time.localtime().tm_hour == RESET_HOUR:
-            self._mqtt_builder.clear_production_today()
-            logger.info("Reset hour reached")
 
         logger.debug("Read data from DTU")
         plant_data = None

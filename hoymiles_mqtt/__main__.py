@@ -15,6 +15,7 @@ DEFAULT_MQTT_PORT = 1883
 DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
+DEFAULT_TOPIC = 'homeassistant/hoymiles_mqtt'
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,8 @@ def _setup_logger(options: configargparse.Namespace) -> None:
     # Modbus is a noisy library. Especially on DEBUG-level.
     pymodbus_log = logging.getLogger('pymodbus')
     pymodbus_log.setLevel(logging.INFO)
+    paho_log = logging.getLogger('paho')
+    paho_log.setLevel(logging.INFO)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -194,6 +197,14 @@ def _parse_args() -> argparse.Namespace:
         env_var='LOG_FILE',
         help="Python logger log file. Default: not writing into a file",
     )
+    cfg_parser.add(
+        '--mqtt-topic',
+        required=False,
+        type=str,
+        default=DEFAULT_TOPIC,
+        env_var='MQTT_TOPIC',
+        help=f"MQTT topic to base all output data.",
+    )
     return cfg_parser.parse_args()
 
 
@@ -202,7 +213,8 @@ def main():
     options = _parse_args()
     _setup_logger(options)
     mqtt_builder = HassMqtt(
-        mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
+        mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after,
+        topic_base=options.mqtt_topic
     )
     microinverter_type = getattr(MicroinverterType, options.microinverter_type)
     modbus_client = HoymilesModbusTCP(
