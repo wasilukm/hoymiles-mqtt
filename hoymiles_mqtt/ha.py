@@ -148,9 +148,11 @@ class HassMqtt:
     """MQTT message builder for Home Assistant."""
 
     RESET_HOUR: int = 22
+    CONFIG_TOPIC_BASE: str = 'homeassistant'
 
     def __init__(
         self, mi_entities: List[str], port_entities: List[str],
+        topic_base: str,
         post_process: bool = True, expire_after: int = 0
     ) -> None:
         """Initialize the object.
@@ -164,6 +166,7 @@ class HassMqtt:
 
         """
         self._logger = logging.getLogger(self.__class__.__name__)
+        self._topic_base: str = topic_base
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
@@ -182,15 +185,14 @@ class HassMqtt:
 
     @staticmethod
     def _get_config_topic(platform: str, device_serial: str, entity_name) -> str:
-        return f"homeassistant/{platform}/{device_serial}/{entity_name}/config"
+        return f"{HassMqtt.CONFIG_TOPIC_BASE}/{platform}/{device_serial}/{entity_name}/config"
 
-    @staticmethod
-    def _get_state_topic(device_serial: str, port: Optional[int]) -> str:
+    def _get_state_topic(self, device_serial: str, port: Optional[int]) -> str:
         if port is not None:
             sub_topic = f'{device_serial}/{port}'
         else:
             sub_topic = device_serial
-        return f"homeassistant/hoymiles_mqtt/{sub_topic}/state"
+        return f"{self._topic_base}/{sub_topic}/state"
 
     def _get_config_payloads(
         self,
