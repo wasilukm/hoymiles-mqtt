@@ -2,9 +2,12 @@
 
 import logging
 import ssl
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from paho.mqtt.publish import single as publish_single
+
+if TYPE_CHECKING:
+    from paho.mqtt.publish import AuthParameter, TLSParameter
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +37,16 @@ class MqttPublisher:
         """
         self._mqtt_broker = mqtt_broker
         self._mqtt_port = mqtt_port
-        self._auth = None
+        self._auth: Optional[AuthParameter] = None
         if mqtt_user and mqtt_password:
             self._auth = {'username': mqtt_user, 'password': mqtt_password}
-        self._tls = None
+        self._tls: Optional[TLSParameter] = None
         if mqtt_tls:
-            self._tls = {'tls_version': ssl.PROTOCOL_TLS_CLIENT, 'insecure': False}
+            self._tls = {
+                'ca_certs': None,  # type: ignore[typeddict-item]
+                'tls_version': ssl.PROTOCOL_TLS_CLIENT,
+                'insecure': False,
+            }
             if mqtt_tls_insecure:
                 self._tls['insecure'] = True
 

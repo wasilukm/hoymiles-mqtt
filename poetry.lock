@@ -1260,16 +1260,17 @@ files = [
 
 [[package]]
 name = "paho-mqtt"
-version = "1.6.1"
+version = "2.1.0"
 description = "MQTT version 5.0/3.1.1 client class"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "paho-mqtt-1.6.1.tar.gz", hash = "sha256:2a8291c81623aec00372b5a85558a372c747cbca8e9934dfe218638b8eefc26f"},
+    {file = "paho_mqtt-2.1.0-py3-none-any.whl", hash = "sha256:6db9ba9b34ed5bc6b6e3812718c7e06e2fd7444540df2455d2c51bd58808feee"},
+    {file = "paho_mqtt-2.1.0.tar.gz", hash = "sha256:12d6e7511d4137555a3f6ea167ae846af2c7357b10bc6fa4f7c3968fc1723834"},
 ]
 
 [package.extras]
-proxy = ["PySocks"]
+proxy = ["pysocks"]
 
 [[package]]
 name = "pathspec"
@@ -2031,4 +2032,4 @@ test = ["black", "flake8", "flake8-docstrings", "isort", "mypy", "pytest", "pyte
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "4ec934400c4233a177a72f3c027209692f17c215ee08bfac42f77f60b6a008c9"
+content-hash = "652fe84b4e8db5cbcb9a5d74af4d588c2ed106074f3585f907ebc0d57843b88d"
