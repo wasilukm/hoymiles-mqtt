@@ -1,8 +1,8 @@
 """MQTT related interfaces."""
 
-# mypy: ignore-errors
 import logging
 import ssl
+from typing import Optional
 
 from paho.mqtt.publish import single as publish_single
 
@@ -16,10 +16,10 @@ class MqttPublisher:
         self,
         mqtt_broker: str,
         mqtt_port: int,
-        mqtt_user: str = None,
-        mqtt_password: str = None,
-        mqtt_tls: bool = False,
-        mqtt_tls_insecure: bool = False,
+        mqtt_user: Optional[str] = None,
+        mqtt_password: Optional[str] = None,
+        mqtt_tls: Optional[bool] = False,
+        mqtt_tls_insecure: Optional[bool] = False,
     ):
         """Initialize the object.
 
@@ -39,7 +39,7 @@ class MqttPublisher:
             self._auth = {'username': mqtt_user, 'password': mqtt_password}
         self._tls = None
         if mqtt_tls:
-            self._tls = {'tls_version': ssl.PROTOCOL_TLS_CLIENT}
+            self._tls = {'tls_version': ssl.PROTOCOL_TLS_CLIENT, 'insecure': False}
             if mqtt_tls_insecure:
                 self._tls['insecure'] = True
 
