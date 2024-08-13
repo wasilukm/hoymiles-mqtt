@@ -1,6 +1,8 @@
 """MQTT related interfaces."""
-import ssl
+
+# mypy: ignore-errors
 import logging
+import ssl
 
 from paho.mqtt.publish import single as publish_single
 
