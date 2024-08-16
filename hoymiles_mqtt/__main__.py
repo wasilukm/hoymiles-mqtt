@@ -1,4 +1,5 @@
 """Hoymiles to MQTT tool."""
+
 import argparse
 import logging
 

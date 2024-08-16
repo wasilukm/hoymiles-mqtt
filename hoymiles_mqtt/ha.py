@@ -1,4 +1,5 @@
 """MQTT message builders for Home Assistant."""
+
 import json
 import logging
 from dataclasses import dataclass

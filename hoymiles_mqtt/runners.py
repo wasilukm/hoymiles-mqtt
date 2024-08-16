@@ -1,11 +1,12 @@
 """Runners."""
+
+import logging
 import threading
 import time
 from typing import Callable
-import logging
 
-from pymodbus import exceptions as pymodbus_exceptions
 from hoymiles_modbus.client import HoymilesModbusTCP
+from pymodbus import exceptions as pymodbus_exceptions
 
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
@@ -65,9 +66,9 @@ class HoymilesQueryJob:
                 if not self._mqtt_configured:
                     for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
                         self._mqtt_publisher.publish(topic=topic, message=payload, retain=True)
-                        mqtt_broker = "mqtt://{}:{}/{}".format(self._mqtt_publisher._mqtt_broker,
-                                                               self._mqtt_publisher._mqtt_port,
-                                                               topic)
+                        mqtt_broker = "mqtt://{}:{}/{}".format(
+                            self._mqtt_publisher._mqtt_broker, self._mqtt_publisher._mqtt_port, topic
+                        )
                         logger.debug("Published config into {}".format(mqtt_broker))
                     self._mqtt_configured = True
 
@@ -75,17 +76,19 @@ class HoymilesQueryJob:
                 for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
                     self._mqtt_publisher.publish(topic=topic, message=payload)
                     publish_count += 1
-                    mqtt_broker = "mqtt://{}:{}/{}".format(self._mqtt_publisher._mqtt_broker,
-                                                           self._mqtt_publisher._mqtt_port,
-                                                           topic)
+                    mqtt_broker = "mqtt://{}:{}/{}".format(
+                        self._mqtt_publisher._mqtt_broker, self._mqtt_publisher._mqtt_port, topic
+                    )
                     logger.debug("Published data into %s", mqtt_broker)
             except Exception:
                 logger.exception("Failed to publish data from DTU. Unknown failure type.")
 
-            logger.info("DTU data received and published. %s messages into mqtt://%s:%d",
-                        publish_count,
-                        self._mqtt_publisher._mqtt_broker,
-                        self._mqtt_publisher._mqtt_port)
+            logger.info(
+                "DTU data received and published. %s messages into mqtt://%s:%d",
+                publish_count,
+                self._mqtt_publisher._mqtt_broker,
+                self._mqtt_publisher._mqtt_port,
+            )
         else:
             logger.warning("No DTU data received!")
 
