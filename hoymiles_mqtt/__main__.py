@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import sys
 
 import configargparse
 from hoymiles_modbus.client import HoymilesModbusTCP
@@ -22,13 +23,17 @@ logger = logging.getLogger(__name__)
 
 def _setup_logger(options: configargparse.Namespace) -> None:
     log_level = logging.getLevelName(options.log_level)
-    if not log_level:
-        raise ValueError("Unkown logging level '{}'!".format(options.log_level))
+
+    handlers: list[logging.Handler] = []
+    if options.log_to_console:
+        handlers.append(logging.StreamHandler(sys.stdout))
+    if options.log_file:
+        handlers.append(logging.FileHandler(options.log_file))
 
     logging.basicConfig(
         format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
         level=log_level,
-        filename=options.log_file,
+        handlers=handlers,
     )
     # Modbus is a noisy library. Especially on DEBUG-level.
     pymodbus_log = logging.getLogger('pymodbus')
@@ -194,6 +199,14 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         env_var='LOG_FILE',
         help="Python logger log file. Default: not writing into a file",
+    )
+    cfg_parser.add(
+        '--log-to-console',
+        required=False,
+        action='store_true',
+        default=False,
+        env_var='LOG_TO_CONSOLE',
+        help="Enable logging to console.",
     )
     return cfg_parser.parse_args()
 
