@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] (2024-08-26)
+
+* add support for Python 3.12
+* BREAKING CHANGE: drop support for Python 3.8
+* Docker uses Python 3.12 image (3.9 previously)
+* restore capability of logging to console (use `--log-to-console` switch)
+
 ## [0.7.0] (2024-08-10)
 
 * improved logging capabilities (thanks to @HQJaTu)
