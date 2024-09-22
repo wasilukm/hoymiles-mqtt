@@ -1,6 +1,5 @@
 """MQTT related interfaces."""
 
-import logging
 import ssl
 from typing import TYPE_CHECKING, Optional
 
@@ -8,8 +7,6 @@ from paho.mqtt.publish import single as publish_single
 
 if TYPE_CHECKING:
     from paho.mqtt.publish import AuthParameter, TLSParameter
-
-logger = logging.getLogger(__name__)
 
 
 class MqttPublisher:

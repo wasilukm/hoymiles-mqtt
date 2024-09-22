@@ -1,5 +1,7 @@
 """Top-level package for Hoymiles MQTT."""
 
+import logging
+
 __author__ = """Foo Bar"""
 __email__ = 'foo@bar.com'
 __version__ = '0.8.0'
@@ -15,3 +17,5 @@ MI_ENTITIES = [
 ]
 
 PORT_ENTITIES = ['pv_voltage', 'pv_current', 'pv_power', 'today_production', 'total_production']
+
+_main_logger = logging.getLogger(__name__)

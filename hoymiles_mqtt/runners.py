@@ -1,6 +1,5 @@
 """Runners."""
 
-import logging
 import threading
 import time
 from typing import Callable
@@ -8,10 +7,11 @@ from typing import Callable
 from hoymiles_modbus.client import HoymilesModbusTCP
 from pymodbus import exceptions as pymodbus_exceptions
 
+from hoymiles_mqtt import _main_logger
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 
-logger = logging.getLogger(__name__)
+logger = _main_logger.getChild(__name__)
 
 RESET_HOUR = 23
 

@@ -1,13 +1,12 @@
 """MQTT message builders for Home Assistant."""
 
 import json
-import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_modbus.datatypes import PlantData
 
-logger = logging.getLogger(__name__)
+from hoymiles_mqtt import _main_logger
 
 PLATFORM_SENSOR = 'sensor'
 PLATFORM_BINARY_SENSOR = 'binary_sensor'
@@ -160,7 +159,7 @@ class HassMqtt:
                           entity configuration. Applied only when `expire` flag is set in the entity description.
 
         """
-        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger = _main_logger.getChild(self.__class__.__name__)
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process
