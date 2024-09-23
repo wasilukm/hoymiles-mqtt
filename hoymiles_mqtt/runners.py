@@ -1,5 +1,6 @@
 """Runners."""
 
+import signal
 import threading
 import time
 from typing import Callable
@@ -107,7 +108,7 @@ def run_periodic_job(period: int, job: Callable) -> None:
         job: function to execute
 
     """
-    running = True
+    stop_event = threading.Event()
     logger.info("Begin looping messages")
 
     def exception_handler(args):
@@ -117,12 +118,24 @@ def run_periodic_job(period: int, job: Callable) -> None:
         )
 
     threading.excepthook = exception_handler
-    while running:
+
+    def signal_handler(signum, frame):
+        logger.debug('Received signal %s', signum)
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    while True:
         thread = threading.Thread(target=job)
         logger.debug('Start acquire and send thread')
-        try:
-            thread.start()
-        except KeyboardInterrupt:
-            running = False
-        time.sleep(period)
+        thread.start()
+
+        # wait the given time unless termination signal received
+        # if not continue looping, otherwise stop
+        if stop_event.wait(timeout=period):
+            logger.debug("Wait for the end of acquire and send thread")
+            thread.join()
+            break
+
     logger.info("Done looping messages")
