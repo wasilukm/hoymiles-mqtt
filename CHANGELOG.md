@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.8.1] (2024-09-29)
+
+* fix not graceful process termination - added support for system signals.
+* rework logging to not log events from sub-dependencies (they were spamming logs)
+
 ## [0.8.0] (2024-08-26)
 
 * add support for Python 3.12
