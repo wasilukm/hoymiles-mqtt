@@ -8,6 +8,8 @@ from hoymiles_modbus.datatypes import PlantData
 
 from hoymiles_mqtt import _main_logger
 
+logger = _main_logger.getChild('ha')
+
 PLATFORM_SENSOR = 'sensor'
 PLATFORM_BINARY_SENSOR = 'binary_sensor'
 
@@ -159,7 +161,7 @@ class HassMqtt:
                           entity configuration. Applied only when `expire` flag is set in the entity description.
 
         """
-        self._logger = _main_logger.getChild(self.__class__.__name__)
+        self._logger = logger
         self._state_topics: Dict = {}
         self._config_topics: Dict = {}
         self._post_process: bool = post_process

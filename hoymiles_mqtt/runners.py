@@ -12,7 +12,7 @@ from hoymiles_mqtt import _main_logger
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 
-logger = _main_logger.getChild(__name__)
+logger = _main_logger.getChild('runners')
 
 RESET_HOUR = 23
 

@@ -18,7 +18,7 @@ DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
 
-logger = _main_logger.getChild(__name__)
+logger = _main_logger.getChild('__main__')
 
 
 def _setup_logger(options: configargparse.Namespace) -> None:
