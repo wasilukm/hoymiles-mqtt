@@ -8,7 +8,7 @@ import configargparse
 from hoymiles_modbus.client import HoymilesModbusTCP
 from hoymiles_modbus.datatypes import MicroinverterType
 
-from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES
+from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES, _main_logger
 from hoymiles_mqtt.ha import HassMqtt
 from hoymiles_mqtt.mqtt import MqttPublisher
 from hoymiles_mqtt.runners import HoymilesQueryJob, run_periodic_job
@@ -18,12 +18,10 @@ DEFAULT_MODBUS_PORT = 502
 DEFAULT_QUERY_PERIOD_SEC = 60
 DEFAULT_MODBUS_UNIT_ID = 1
 
-logger = logging.getLogger(__name__)
+logger = _main_logger.getChild('__main__')
 
 
 def _setup_logger(options: configargparse.Namespace) -> None:
-    log_level = logging.getLevelName(options.log_level)
-
     handlers: list[logging.Handler] = []
     if options.log_to_console:
         handlers.append(logging.StreamHandler(sys.stdout))
@@ -32,12 +30,9 @@ def _setup_logger(options: configargparse.Namespace) -> None:
 
     logging.basicConfig(
         format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  [%(name)s] %(message)s",
-        level=log_level,
         handlers=handlers,
     )
-    # Modbus is a noisy library. Especially on DEBUG-level.
-    pymodbus_log = logging.getLogger('pymodbus')
-    pymodbus_log.setLevel(logging.INFO)
+    _main_logger.setLevel(options.log_level)
 
 
 def _parse_args() -> argparse.Namespace:
