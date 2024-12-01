@@ -6,7 +6,6 @@ import sys
 
 import configargparse
 from hoymiles_modbus.client import HoymilesModbusTCP
-from hoymiles_modbus.datatypes import MicroinverterType
 
 from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES, _main_logger
 from hoymiles_mqtt.ha import HassMqtt
@@ -91,15 +90,6 @@ def _parse_args() -> argparse.Namespace:
         help='How often (in seconds) DTU shall be queried.',
     )
     cfg_parser.add(
-        '--microinverter-type',
-        required=False,
-        type=str,
-        choices=['MI', 'HM'],
-        default='MI',
-        env_var='MICROINVERTER_TYPE',
-        help='Type od microinverters in the installation. Mixed types are not supported.',
-    )
-    cfg_parser.add(
         '--mi-entities',
         required=False,
         nargs="+",
@@ -147,36 +137,25 @@ def _parse_args() -> argparse.Namespace:
         help="Additional low level modbus communication parameter - max number of retries per request.",
     )
     cfg_parser.add(
-        '--comm-retry-on-empty',
-        required=False,
-        type=bool,
-        default=False,
-        env_var='COMM_RETRY_ON_EMPTY',
-        help="Additional low level modbus communication parameter - retry if received an empty response.",
-    )
-    cfg_parser.add(
-        '--comm-close-comm-on-error',
-        required=False,
-        type=bool,
-        default=False,
-        env_var='COMM_CLOSE_COMM_ON_ERROR',
-        help="Additional low level modbus communication parameter - close connection on error.",
-    )
-    cfg_parser.add(
-        '--comm-strict',
-        required=False,
-        type=bool,
-        default=True,
-        env_var='COMM_STRICT',
-        help="Additional low level modbus communication parameter - strict timing, 1.5 character between requests.",
-    )
-    cfg_parser.add(
         '--comm-reconnect-delay',
         required=False,
-        type=int,
-        default=60000 * 5,
+        type=float,
+        default=0,
         env_var='COMM_RECONNECT_DELAY',
-        help="Additional low level modbus communication parameter - delay in milliseconds before reconnecting.",
+        help="Additional low level modbus communication parameter - Minimum "
+        "delay in seconds.milliseconds before reconnecting. "
+        "Doubles automatically with each unsuccessful connect, from "
+        "**reconnect_delay** to **reconnect_delay_max**. "
+        "Default is 0 which means that reconnecting is disabled.",
+    )
+    cfg_parser.add(
+        '--comm-reconnect-delay-max',
+        required=False,
+        type=float,
+        default=300,
+        env_var='COMM_RECONNECT_DELAY_MAX',
+        help="Additional low level modbus communication parameter - maximum "
+        "delay in seconds.milliseconds before reconnecting.",
     )
     cfg_parser.add(
         '--log-level',
@@ -213,19 +192,15 @@ def main():
     mqtt_builder = HassMqtt(
         mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
     )
-    microinverter_type = getattr(MicroinverterType, options.microinverter_type)
     modbus_client = HoymilesModbusTCP(
         host=options.dtu_host,
         port=options.dtu_port,
-        microinverter_type=microinverter_type,
         unit_id=options.modbus_unit_id,
     )
     modbus_client.comm_params.timeout = options.comm_timeout
     modbus_client.comm_params.retries = options.comm_retries
-    modbus_client.comm_params.retry_on_empty = options.comm_retry_on_empty
-    modbus_client.comm_params.close_comm_on_error = options.comm_close_comm_on_error
-    modbus_client.comm_params.strict = options.comm_strict
     modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay
+    modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay_max
 
     mqtt_publisher = MqttPublisher(
         mqtt_broker=options.mqtt_broker,

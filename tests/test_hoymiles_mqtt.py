@@ -2,7 +2,7 @@
 """Tests for `hoymiles_mqtt` package."""
 import json
 
-from hoymiles_modbus.client import MISeriesMicroinverterData, PlantData
+from hoymiles_modbus.datatypes import InverterData, PlantData
 
 from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES
 from hoymiles_mqtt.ha import HassMqtt
@@ -10,7 +10,7 @@ from hoymiles_mqtt.ha import HassMqtt
 
 def get_example_data() -> PlantData:
     """Create example PlantData."""
-    example_microinverter_data = MISeriesMicroinverterData(
+    example_inverters = InverterData(
         data_type=0,
         serial_number='102162804827',
         port_number=3,
@@ -28,7 +28,7 @@ def get_example_data() -> PlantData:
         link_status=1,
         reserved=[],
     )
-    return PlantData('dtu_serial', microinverter_data=[example_microinverter_data])
+    return PlantData('dtu_serial', inverters=[example_inverters])
 
 
 def test_config_payload():
@@ -180,8 +180,8 @@ def test_get_states():
         '{"pv_voltage": 1.234, "pv_current": 2.34, "pv_power": 40.31, "today_production": 431, '
         '"total_production": 8844}',
     )
-    example_data.microinverter_data[0].today_production += 1
-    example_data.microinverter_data[0].total_production += 2
+    example_data.inverters[0].today_production += 1
+    example_data.inverters[0].total_production += 2
     states = list(ha.get_states(example_data))
     assert states[0] == (
         'homeassistant/hoymiles_mqtt/dtu_serial/state',
@@ -200,9 +200,9 @@ def test_zero_operating_status():
     example_data = get_example_data()
     list(ha.get_states(example_data))
 
-    example_data.microinverter_data[0].operating_status = 0
-    example_data.microinverter_data[0].today_production += 1
-    example_data.microinverter_data[0].total_production += 2
+    example_data.inverters[0].operating_status = 0
+    example_data.inverters[0].today_production += 1
+    example_data.inverters[0].total_production += 2
     states = list(ha.get_states(example_data))
     assert states[0] == (
         'homeassistant/hoymiles_mqtt/dtu_serial/state',
@@ -215,8 +215,8 @@ def test_production_drop():
     ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
     example_data = get_example_data()
     list(ha.get_states(example_data))
-    example_data.microinverter_data[0].today_production -= 1
-    example_data.microinverter_data[0].total_production -= 2
+    example_data.inverters[0].today_production -= 1
+    example_data.inverters[0].total_production -= 2
     states = list(ha.get_states(example_data))
     assert states[0] == (
         'homeassistant/hoymiles_mqtt/dtu_serial/state',

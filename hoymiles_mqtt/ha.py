@@ -2,11 +2,12 @@
 
 import json
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
-
-from hoymiles_modbus.datatypes import PlantData
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 
 from hoymiles_mqtt import _main_logger
+
+if TYPE_CHECKING:
+    from hoymiles_modbus.datatypes import PlantData
 
 logger = _main_logger.getChild('ha')
 
@@ -231,7 +232,7 @@ class HassMqtt:
         self._logger.debug('Clear today production cache.')
         self._prod_today_cache = {}
 
-    def get_configs(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
+    def get_configs(self, plant_data: 'PlantData') -> Iterable[Tuple[str, str]]:
         """Get MQTT config messages for given data from DTU.
 
         Arguments:
@@ -240,7 +241,7 @@ class HassMqtt:
         """
         for topic, payload in self._get_config_payloads('DTU', plant_data.dtu, DtuEntities):
             yield topic, payload
-        for microinverter_data in plant_data.microinverter_data:
+        for microinverter_data in plant_data.inverters:
             for topic, payload in self._get_config_payloads('inv', microinverter_data.serial_number, self._mi_entities):
                 yield topic, payload
             for topic, payload in self._get_config_payloads(
@@ -270,8 +271,8 @@ class HassMqtt:
         state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
 
-    def _update_cache(self, plant_data: PlantData) -> None:
-        for microinverter in plant_data.microinverter_data:
+    def _update_cache(self, plant_data: 'PlantData') -> None:
+        for microinverter in plant_data.inverters:
             cache_key = (microinverter.serial_number, microinverter.port_number)
             if cache_key not in self._prod_today_cache:
                 self._prod_today_cache[cache_key] = ZERO
@@ -299,12 +300,12 @@ class HassMqtt:
                     )
                     microinverter.total_production = self._prod_total_cache[cache_key]
 
-    def _process_plant_data(self, plant_data: PlantData) -> None:
+    def _process_plant_data(self, plant_data: 'PlantData') -> None:
         self._update_cache(plant_data)
         plant_data.today_production = sum(self._prod_today_cache.values()) if self._prod_today_cache else ZERO
         plant_data.total_production = sum(self._prod_total_cache.values()) if self._prod_total_cache else ZERO
 
-    def get_states(self, plant_data: PlantData) -> Iterable[Tuple[str, str]]:
+    def get_states(self, plant_data: 'PlantData') -> Iterable[Tuple[str, str]]:
         """Get MQTT message for DTU data.
 
         Arguments:
@@ -315,7 +316,7 @@ class HassMqtt:
             self._process_plant_data(plant_data)
         yield self._get_state(plant_data.dtu, DtuEntities, plant_data)
         known_serials = []
-        for microinverter_data in plant_data.microinverter_data:
+        for microinverter_data in plant_data.inverters:
             if microinverter_data.serial_number not in known_serials:
                 known_serials.append(microinverter_data.serial_number)
                 yield self._get_state(microinverter_data.serial_number, self._mi_entities, microinverter_data)
