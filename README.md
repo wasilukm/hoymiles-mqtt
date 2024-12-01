@@ -10,6 +10,9 @@
 
 Send data from Hoymiles photovoltaic installation to Home Assistant through MQTT broker.
 
+Disclaimer: This is an independent project, not affiliated with Hoymiles.
+Any trademarks or product names mentioned are the property of their respective owners.
+
 * GitHub: <https://github.com/wasilukm/hoymiles-mqtt>
 * PyPI: <https://pypi.org/project/hoymiles-mqtt/>
 * Free software: MIT
