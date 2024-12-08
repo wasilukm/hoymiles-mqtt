@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0] (2024-12-08)
+
+New feature:
+- inverter type (MI or HM) is now automatically detected
+- compatibility with pymodbus 3.7
+- added parameter communication parameter `comm-reconnect-delay-max`
+
+Breaking changes:
+- removed parameter microinverter-type (no longer needed)
+- due to support for pymodbus 3.7 removed parameters:
+  - `comm-retry-on-empty`
+  - `comm-close-comm-on-error`
+  - `comm-strict`
+- default value of `comm-reconnect-delay` changed to 0 (means reconnections are disabled).
+  The previous value was big to achieve the same. However, the new value is the proper solution.
+
 ## [0.8.1] (2024-09-29)
 
 * fix not graceful process termination - added support for system signals.
