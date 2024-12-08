@@ -4,7 +4,7 @@ import logging
 
 __author__ = """Mariusz Wasiluk"""
 __email__ = 'foo@bar.com'
-__version__ = '0.8.1'
+__version__ = '0.9.0'
 
 MI_ENTITIES = [
     'grid_voltage',
