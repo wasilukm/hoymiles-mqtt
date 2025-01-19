@@ -160,7 +160,7 @@ This is to prevent drops in measurements which shall be only increasing.
 
 Build an image
 
-    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.9.0 -t hoymiles_mqtt
+    docker build https://github.com/wasilukm/hoymiles-mqtt.git#v0.10.0 -t hoymiles_mqtt
 
 Run (change IP addresses)
 

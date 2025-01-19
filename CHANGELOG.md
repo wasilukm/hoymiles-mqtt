@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0] (2025-01-19)
+
+* add support for Python 3.13
+* improve detection of inverter type (updated hoymiles_modbus library)
+  (fixes #36)
+
 ## [0.9.0] (2024-12-08)
 
 New feature:
