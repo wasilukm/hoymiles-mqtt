@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.11.0] (2025-09-02)
+
+* update pymodbus to 3.11 (via hoymiles-modbus package) to align with Home Assistant
+* drop support for Python 3.9
+
 ## [0.10.0] (2025-01-19)
 
 * add support for Python 3.13
