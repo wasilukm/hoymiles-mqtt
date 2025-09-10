@@ -155,8 +155,10 @@ This is to prevent drops in measurements which shall be only increasing.
     general, command-line values override environment variables which override config file values which
     override defaults.
 
+### As HA integration
+See https://github.com/wasilukm/hoymiles-mqtt-integration
 
-### Docker
+### As a standalone Docker container
 
 Build an image
 
