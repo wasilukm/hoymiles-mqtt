@@ -72,7 +72,7 @@ class HoymilesQueryJob:
                         for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
                             self._mqtt_publisher.publish(topic=topic, message=payload, retain=True)
                             mqtt_broker = "mqtt://{}:{}/{}".format(
-                                self._mqtt_publisher._mqtt_broker, self._mqtt_publisher._mqtt_port, topic
+                                self._mqtt_publisher.broker, self._mqtt_publisher.broker_port, topic
                             )
                             logger.debug("Published config into {}".format(mqtt_broker))
                         self._mqtt_configured = True
@@ -82,7 +82,7 @@ class HoymilesQueryJob:
                         self._mqtt_publisher.publish(topic=topic, message=payload)
                         publish_count += 1
                         mqtt_broker = "mqtt://{}:{}/{}".format(
-                            self._mqtt_publisher._mqtt_broker, self._mqtt_publisher._mqtt_port, topic
+                            self._mqtt_publisher.broker, self._mqtt_publisher.broker_port, topic
                         )
                         logger.debug("Published data into %s", mqtt_broker)
                 except Exception:
@@ -91,8 +91,8 @@ class HoymilesQueryJob:
                 logger.info(
                     "DTU data received and published. %s messages into mqtt://%s:%d",
                     publish_count,
-                    self._mqtt_publisher._mqtt_broker,
-                    self._mqtt_publisher._mqtt_port,
+                    self._mqtt_publisher.broker,
+                    self._mqtt_publisher.broker_port,
                 )
             else:
                 logger.warning("No DTU data received!")

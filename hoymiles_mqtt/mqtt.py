@@ -47,6 +47,14 @@ class MqttPublisher:
             if mqtt_tls_insecure:
                 self._tls['insecure'] = True
 
+    @property
+    def broker(self) -> str:
+        return self._mqtt_broker
+
+    @property
+    def broker_port(self) -> int:
+        return self._mqtt_port
+
     def publish(self, topic: str, message: str, retain: bool = False) -> None:
         """Publish a message to the given MQTT topic.
 
