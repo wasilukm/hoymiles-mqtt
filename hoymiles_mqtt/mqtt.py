@@ -25,7 +25,7 @@ class MqttPublisher:
         """Initialize the object.
 
         Arguments:
-            mqtt_broker: address of MQTT broker
+            mqtt_broker: address/name of MQTT broker
             mqtt_port: port of MQTT broker
             mqtt_user: MQTT username
             mqtt_password: password
@@ -50,14 +50,22 @@ class MqttPublisher:
 
     @property
     def broker(self) -> str:
+        """Address/name of the MQTT broker."""
         return self._mqtt_broker
 
     @property
     def broker_port(self) -> int:
+        """Port of the MQTT broker."""
         return self._mqtt_port
 
     @contextmanager
     def schedule_publish(self) -> Generator["MessagesList", Any, None]:
+        """Schedule and send messages in a group.
+
+        Context manager to collect messages and send them all
+        together within the same MQTT connection session at exit.
+
+        """
         messages: MessagesList = []
 
         yield messages
