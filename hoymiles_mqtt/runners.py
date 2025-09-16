@@ -69,31 +69,36 @@ class HoymilesQueryJob:
                     # Publish configurations?
                     # This is done only for the first data set
                     if not self._mqtt_configured:
-                        for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
-                            self._mqtt_publisher.publish(topic=topic, message=payload, retain=True)
-                            mqtt_broker = "mqtt://{}:{}/{}".format(
-                                self._mqtt_publisher.broker, self._mqtt_publisher.broker_port, topic
-                            )
-                            logger.debug("Published config into {}".format(mqtt_broker))
+                        with self._mqtt_publisher.schedule_publish() as queue:
+                            for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
+                                queue.append(dict(topic=topic, payload=payload, retain=True))
+                                logger.debug(
+                                    "Scheduled config publish into mqtt://%s:%s/%s",
+                                    self._mqtt_publisher.broker,
+                                    self._mqtt_publisher.broker_port,
+                                    topic,
+                                )
                         self._mqtt_configured = True
-
                     # Publish data
-                    for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
-                        self._mqtt_publisher.publish(topic=topic, message=payload)
-                        publish_count += 1
-                        mqtt_broker = "mqtt://{}:{}/{}".format(
-                            self._mqtt_publisher.broker, self._mqtt_publisher.broker_port, topic
-                        )
-                        logger.debug("Published data into %s", mqtt_broker)
+                    with self._mqtt_publisher.schedule_publish() as queue:
+                        for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
+                            queue.append(dict(topic=topic, payload=payload))
+                            publish_count += 1
+                            logger.debug(
+                                "Scheduled data publish into mqtt://%s:%s/%s",
+                                self._mqtt_publisher.broker,
+                                self._mqtt_publisher.broker_port,
+                                topic,
+                            )
                 except Exception:
                     logger.exception("Failed to publish data from DTU. Unknown failure type.")
-
-                logger.info(
-                    "DTU data received and published. %s messages into mqtt://%s:%d",
-                    publish_count,
-                    self._mqtt_publisher.broker,
-                    self._mqtt_publisher.broker_port,
-                )
+                else:
+                    logger.info(
+                        "DTU data received and published %s messages into mqtt://%s:%d",
+                        publish_count,
+                        self._mqtt_publisher.broker,
+                        self._mqtt_publisher.broker_port,
+                    )
             else:
                 logger.warning("No DTU data received!")
         finally:

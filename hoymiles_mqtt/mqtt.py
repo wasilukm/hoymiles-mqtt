@@ -1,12 +1,13 @@
 """MQTT related interfaces."""
 
 import ssl
-from typing import TYPE_CHECKING, Optional
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from paho.mqtt.publish import single as publish_single
+from paho.mqtt.publish import multiple as publish_multiple
 
 if TYPE_CHECKING:
-    from paho.mqtt.publish import AuthParameter, TLSParameter
+    from paho.mqtt.publish import AuthParameter, MessagesList, TLSParameter
 
 
 class MqttPublisher:
@@ -55,21 +56,16 @@ class MqttPublisher:
     def broker_port(self) -> int:
         return self._mqtt_port
 
-    def publish(self, topic: str, message: str, retain: bool = False) -> None:
-        """Publish a message to the given MQTT topic.
+    @contextmanager
+    def schedule_publish(self) -> Generator["MessagesList", Any, None]:
+        messages: MessagesList = []
 
-        Arguments:
-            topic: MQTT topic
-            message: a message to publish
-            retain: if the message shall be retained by MQTT broker
+        yield messages
 
-        """
-        publish_single(
-            topic=topic,
-            payload=message,
-            hostname=self._mqtt_broker,
-            port=self._mqtt_port,
+        publish_multiple(
+            msgs=messages,
+            hostname=self.broker,
+            port=self.broker_port,
             auth=self._auth,
-            retain=retain,
             tls=self._tls,
         )
