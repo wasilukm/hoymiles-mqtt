@@ -71,7 +71,7 @@ class HoymilesQueryJob:
                     if not self._mqtt_configured:
                         with self._mqtt_publisher.schedule_publish() as queue:
                             for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
-                                queue.append(dict(topic=topic, payload=payload, retain=True))
+                                queue.add(topic=topic, payload=payload, retain=True)
                                 logger.debug(
                                     "Scheduled config publish into mqtt://%s:%s/%s",
                                     self._mqtt_publisher.broker,
@@ -82,7 +82,7 @@ class HoymilesQueryJob:
                     # Publish data
                     with self._mqtt_publisher.schedule_publish() as queue:
                         for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
-                            queue.append(dict(topic=topic, payload=payload))
+                            queue.add(topic=topic, payload=payload)
                             publish_count += 1
                             logger.debug(
                                 "Scheduled data publish into mqtt://%s:%s/%s",

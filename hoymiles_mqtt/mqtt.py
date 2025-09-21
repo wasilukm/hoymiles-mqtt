@@ -9,6 +9,18 @@ if TYPE_CHECKING:
     from paho.mqtt.publish import AuthParameter, MessagesList, TLSParameter
 
 
+class MsgQueue:
+    """MQTT message queue."""
+
+    def __init__(self, buffer: "MessagesList") -> None:
+        """Initialize the queue."""
+        self._buffer = buffer
+
+    def add(self, topic: str, payload: str, qos: int = 0, retain: bool = False) -> None:
+        """Add a message to the queue."""
+        self._buffer.append((topic, payload, qos, retain))
+
+
 class MqttPublisher:
     """MQTT Publisher."""
 
@@ -55,7 +67,7 @@ class MqttPublisher:
         return self._mqtt_port
 
     @contextmanager
-    def schedule_publish(self) -> Generator["MessagesList", Any, None]:
+    def schedule_publish(self) -> Generator[MsgQueue, Any, None]:
         """Schedule and send messages in a group.
 
         Context manager to collect messages and send them all
@@ -64,7 +76,7 @@ class MqttPublisher:
         """
         messages: MessagesList = []
 
-        yield messages
+        yield MsgQueue(messages)
 
         publish_multiple(
             msgs=messages,
