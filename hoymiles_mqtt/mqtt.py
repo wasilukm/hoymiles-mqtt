@@ -1,6 +1,5 @@
 """MQTT related interfaces."""
 
-import ssl
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
@@ -19,8 +18,8 @@ class MqttPublisher:
         mqtt_port: int,
         mqtt_user: Optional[str] = None,
         mqtt_password: Optional[str] = None,
-        mqtt_tls: Optional[bool] = False,
-        mqtt_tls_insecure: Optional[bool] = False,
+        mqtt_tls: bool = False,
+        mqtt_tls_insecure: bool = False,
     ):
         """Initialize the object.
 
@@ -40,13 +39,10 @@ class MqttPublisher:
             self._auth = {'username': mqtt_user, 'password': mqtt_password}
         self._tls: Optional[TLSParameter] = None
         if mqtt_tls:
-            self._tls = {
-                'ca_certs': None,  # type: ignore[typeddict-item]
-                'tls_version': ssl.PROTOCOL_TLS_CLIENT,
-                'insecure': False,
+            self._tls = {  # type: ignore[assignment]
+                'ca_certs': None,  # use default certs
+                'insecure': mqtt_tls_insecure,
             }
-            if mqtt_tls_insecure:
-                self._tls['insecure'] = True
 
     @property
     def broker(self) -> str:
