@@ -1,12 +1,24 @@
 """MQTT related interfaces."""
 
-import ssl
-from typing import TYPE_CHECKING, Optional
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
-from paho.mqtt.publish import single as publish_single
+from paho.mqtt.publish import multiple as publish_multiple
 
 if TYPE_CHECKING:
-    from paho.mqtt.publish import AuthParameter, TLSParameter
+    from paho.mqtt.publish import AuthParameter, MessagesList, TLSParameter
+
+
+class MsgQueue:
+    """MQTT message queue."""
+
+    def __init__(self, buffer: "MessagesList") -> None:
+        """Initialize the queue."""
+        self._buffer = buffer
+
+    def add(self, topic: str, payload: str, qos: int = 0, retain: bool = False) -> None:
+        """Add a message to the queue."""
+        self._buffer.append((topic, payload, qos, retain))
 
 
 class MqttPublisher:
@@ -18,13 +30,13 @@ class MqttPublisher:
         mqtt_port: int,
         mqtt_user: Optional[str] = None,
         mqtt_password: Optional[str] = None,
-        mqtt_tls: Optional[bool] = False,
-        mqtt_tls_insecure: Optional[bool] = False,
+        mqtt_tls: bool = False,
+        mqtt_tls_insecure: bool = False,
     ):
         """Initialize the object.
 
         Arguments:
-            mqtt_broker: address of MQTT broker
+            mqtt_broker: address/name of MQTT broker
             mqtt_port: port of MQTT broker
             mqtt_user: MQTT username
             mqtt_password: password
@@ -39,29 +51,37 @@ class MqttPublisher:
             self._auth = {'username': mqtt_user, 'password': mqtt_password}
         self._tls: Optional[TLSParameter] = None
         if mqtt_tls:
-            self._tls = {
-                'ca_certs': None,  # type: ignore[typeddict-item]
-                'tls_version': ssl.PROTOCOL_TLS_CLIENT,
-                'insecure': False,
+            self._tls = {  # type: ignore[assignment]
+                'ca_certs': None,  # use default certs
+                'insecure': mqtt_tls_insecure,
             }
-            if mqtt_tls_insecure:
-                self._tls['insecure'] = True
 
-    def publish(self, topic: str, message: str, retain: bool = False) -> None:
-        """Publish a message to the given MQTT topic.
+    @property
+    def broker(self) -> str:
+        """Address/name of the MQTT broker."""
+        return self._mqtt_broker
 
-        Arguments:
-            topic: MQTT topic
-            message: a message to publish
-            retain: if the message shall be retained by MQTT broker
+    @property
+    def broker_port(self) -> int:
+        """Port of the MQTT broker."""
+        return self._mqtt_port
+
+    @contextmanager
+    def schedule_publish(self) -> Generator[MsgQueue, Any, None]:
+        """Schedule and send messages in a group.
+
+        Context manager to collect messages and send them all
+        together within the same MQTT connection session at exit.
 
         """
-        publish_single(
-            topic=topic,
-            payload=message,
-            hostname=self._mqtt_broker,
-            port=self._mqtt_port,
+        messages: MessagesList = []
+
+        yield MsgQueue(messages)
+
+        publish_multiple(
+            msgs=messages,
+            hostname=self.broker,
+            port=self.broker_port,
             auth=self._auth,
-            retain=retain,
             tls=self._tls,
         )
