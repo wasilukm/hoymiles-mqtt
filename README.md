@@ -194,19 +194,24 @@ For example to enable logging to console with DEBUG logging level:
 
 > **_NOTE:_**  DEBUG level is very verbose, so should be used only for troubleshooting.
 
-To keep the cached energy production between restarts of the container, store the cache file on a volume:
+The image installs dependencies in versions pinned by `poetry.lock`, so rebuilding it does not silently
+upgrade them.
 
-    docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -e CACHE_FILE=/data/cache.json -v hoymiles_mqtt_data:/data hoymiles_mqtt
+In the container, the cached energy production is stored in `/data/cache.json` (see `--cache-file`).
+To keep it also when the container is recreated (for example on an image update), mount a named volume
+at `/data`:
+
+    docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -v hoymiles_mqtt_data:/data hoymiles_mqtt
 
 or in Docker Compose:
 
     services:
       hoymiles-mqtt:
         image: hoymiles_mqtt
+        restart: unless-stopped
         environment:
           MQTT_BROKER: 192.168.1.101
           DTU_HOST: 192.168.1.100
-          CACHE_FILE: /data/cache.json
         volumes:
           - hoymiles_mqtt_data:/data
     volumes:
