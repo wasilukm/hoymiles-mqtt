@@ -119,3 +119,23 @@ def test_execute_reset_hour_clears_once_per_day(mqtt_builder, mqtt_publisher, mo
         mock_localtime.return_value.tm_yday = 319
         job.execute()
         assert mqtt_builder.clear_production_today.call_count == 2
+
+
+def test_execute_touches_health_file_after_publish(mqtt_builder, mqtt_publisher, modbus_client, tmp_path):
+    """Tests that the health file is updated after data was published."""
+    health_file = tmp_path / 'health'
+    job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client, health_file=str(health_file))
+    job.execute()
+    assert health_file.exists()
+
+
+def test_execute_does_not_touch_health_file_on_failure(mqtt_builder, mqtt_publisher, modbus_client, tmp_path):
+    """Tests that the health file is not updated when data was not published."""
+    health_file = tmp_path / 'health'
+    mqtt_publisher.schedule_publish.return_value.__exit__.side_effect = ConnectionRefusedError
+    job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client, health_file=str(health_file))
+    job.execute()
+    modbus_client.plant_data = None
+    mqtt_publisher.schedule_publish.return_value.__exit__.side_effect = None
+    job.execute()
+    assert not health_file.exists()

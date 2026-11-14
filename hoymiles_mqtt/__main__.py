@@ -133,6 +133,17 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     cfg_parser.add(
+        '--health-file',
+        required=False,
+        type=str,
+        default=None,
+        env_var='HEALTH_FILE',
+        help=(
+            "Path to a file which is touched each time data is published to MQTT. Its modification time can be "
+            "checked by a health check (for example in Docker). By default no file is used."
+        ),
+    )
+    cfg_parser.add(
         '--comm-timeout',
         required=False,
         type=int,
@@ -225,7 +236,12 @@ def main():
         mqtt_tls=options.mqtt_tls,
         mqtt_tls_insecure=options.mqtt_tls_insecure,
     )
-    query_job = HoymilesQueryJob(mqtt_builder=mqtt_builder, mqtt_publisher=mqtt_publisher, modbus_client=modbus_client)
+    query_job = HoymilesQueryJob(
+        mqtt_builder=mqtt_builder,
+        mqtt_publisher=mqtt_publisher,
+        modbus_client=modbus_client,
+        health_file=options.health_file,
+    )
     run_periodic_job(period=options.query_period, job=query_job.execute)
 
 
