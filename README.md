@@ -62,6 +62,20 @@ than 0: grid_voltage, grid_frequency, temperature, pv_voltage, pv_current, pv_po
 Additionally, today_production and total_production are updated only when the inverter's
 operating status is greater than 0 and the new value is greater than the previous one.
 This is to prevent drops in measurements which shall be only increasing.
+An increase bigger than 1000 Wh between two readings is accepted only when it is confirmed by 3 consecutive
+readings, so a single fault value from DTU is not published.
+When the inverter's operating status is 0, the last known good values of port's today_production and
+total_production are sent (or nothing for total_production when the value is not known yet).
+
+DTU's total_production is a sum of the last known good values of all inverters' ports. It is published
+only when every port reported by DTU has a known value, and never when it would be lower than the
+previously published one. Otherwise, a partial sum (for example in the morning, when inverters wake up one
+after another) would be interpreted by Home Assistant as a reset of the meter, and would add the whole
+lifetime production to the statistics.
+
+By default, the last known good values are kept only in memory, so after a restart of the tool
+total_production is not available until all inverters are on-line. To keep the values between restarts, use
+the `--cache-file` option.
 
 ## Usage
 
@@ -78,7 +92,8 @@ This is to prevent drops in measurements which shall be only increasing.
                                     [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD]
                                     [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
                                     [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]]
-                                    [--expire-after EXPIRE_AFTER] [--comm-timeout COMM_TIMEOUT]
+                                    [--expire-after EXPIRE_AFTER] [--cache-file CACHE_FILE]
+                                    [--health-file HEALTH_FILE] [--comm-timeout COMM_TIMEOUT]
                                     [--comm-retries COMM_RETRIES]
                                     [--comm-reconnect-delay COMM_RECONNECT_DELAY]
                                     [--comm-reconnect-delay-max COMM_RECONNECT_DELAY_MAX]
@@ -127,6 +142,15 @@ This is to prevent drops in measurements which shall be only increasing.
                             shallbe greater than the query period. This setting does not apply to
                             entities that represent a total amount such as daily energy production (they
                             never expire). [env var: EXPIRE_AFTER] (default: 0)
+      --cache-file CACHE_FILE
+                            Path to a file where the cached energy production is stored. It allows to
+                            keep correct DTU energy production after a restart of the tool. In Docker,
+                            the file shall be placed on a volume. By default the cache is kept only in
+                            memory. [env var: CACHE_FILE] (default: None)
+      --health-file HEALTH_FILE
+                            Path to a file which is touched each time data is published to MQTT. Its
+                            modification time can be checked by a health check (for example in Docker).
+                            By default no file is used. [env var: HEALTH_FILE] (default: None)
       --comm-timeout COMM_TIMEOUT
                             Additional low level modbus communication parameter - request timeout. [env
                             var: COMM_TIMEOUT] (default: 3)
@@ -174,6 +198,32 @@ For example to enable logging to console with DEBUG logging level:
     docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -e LOG_LEVEL=DEBUG -e LOG_TO_CONSOLE=true hoymiles_mqtt
 
 > **_NOTE:_**  DEBUG level is very verbose, so should be used only for troubleshooting.
+
+The image installs dependencies in versions pinned by `poetry.lock`, so rebuilding it does not silently
+upgrade them.
+
+The container runs as a regular user (UID 1000). It reports itself unhealthy when no data was published
+to MQTT during the last 3 query periods (for example when DTU or MQTT broker is not reachable).
+
+In the container, the cached energy production is stored in `/data/cache.json` (see `--cache-file`).
+To keep it also when the container is recreated (for example on an image update), mount a named volume
+at `/data` (a host directory mounted there instead shall be writable by UID 1000):
+
+    docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -v hoymiles_mqtt_data:/data hoymiles_mqtt
+
+or in Docker Compose:
+
+    services:
+      hoymiles-mqtt:
+        image: hoymiles_mqtt
+        restart: unless-stopped
+        environment:
+          MQTT_BROKER: 192.168.1.101
+          DTU_HOST: 192.168.1.100
+        volumes:
+          - hoymiles_mqtt_data:/data
+    volumes:
+      hoymiles_mqtt_data:
 
 ## Troubleshooting
 

@@ -121,6 +121,29 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     cfg_parser.add(
+        '--cache-file',
+        required=False,
+        type=str,
+        default=None,
+        env_var='CACHE_FILE',
+        help=(
+            "Path to a file where the cached energy production is stored. It allows to keep correct DTU energy "
+            "production after a restart of the tool. In Docker, the file shall be placed on a volume. "
+            "By default the cache is kept only in memory."
+        ),
+    )
+    cfg_parser.add(
+        '--health-file',
+        required=False,
+        type=str,
+        default=None,
+        env_var='HEALTH_FILE',
+        help=(
+            "Path to a file which is touched each time data is published to MQTT. Its modification time can be "
+            "checked by a health check (for example in Docker). By default no file is used."
+        ),
+    )
+    cfg_parser.add(
         '--comm-timeout',
         required=False,
         type=int,
@@ -190,7 +213,10 @@ def main():
     options = _parse_args()
     _setup_logger(options)
     mqtt_builder = HassMqtt(
-        mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
+        mi_entities=options.mi_entities,
+        port_entities=options.port_entities,
+        expire_after=options.expire_after,
+        cache_file=options.cache_file,
     )
     modbus_client = HoymilesModbusTCP(
         host=options.dtu_host,
@@ -210,7 +236,12 @@ def main():
         mqtt_tls=options.mqtt_tls,
         mqtt_tls_insecure=options.mqtt_tls_insecure,
     )
-    query_job = HoymilesQueryJob(mqtt_builder=mqtt_builder, mqtt_publisher=mqtt_publisher, modbus_client=modbus_client)
+    query_job = HoymilesQueryJob(
+        mqtt_builder=mqtt_builder,
+        mqtt_publisher=mqtt_publisher,
+        modbus_client=modbus_client,
+        health_file=options.health_file,
+    )
     run_periodic_job(period=options.query_period, job=query_job.execute)
 
 

@@ -12,3 +12,25 @@ def test_main_happy_path(monkeypatch):
     with patch('hoymiles_mqtt.__main__.run_periodic_job') as mock_run_periodic_job:
         main()
     mock_run_periodic_job.assert_called_once()
+
+
+def test_main_cache_file(monkeypatch):
+    """Verify that the cache file option is passed to the MQTT builder."""
+    monkeypatch.setattr(
+        'sys.argv',
+        ['hoymiles_mqtt', '--mqtt-broker', 'some_broker', '--dtu-host', 'some_dtu_host', '--cache-file', 'cache.json'],
+    )
+    with patch('hoymiles_mqtt.__main__.run_periodic_job'), patch('hoymiles_mqtt.__main__.HassMqtt') as mock_hass_mqtt:
+        main()
+    assert mock_hass_mqtt.call_args.kwargs['cache_file'] == 'cache.json'
+
+
+def test_main_health_file(monkeypatch):
+    """Verify that the health file option is passed to the query job."""
+    monkeypatch.setattr(
+        'sys.argv',
+        ['hoymiles_mqtt', '--mqtt-broker', 'some_broker', '--dtu-host', 'some_dtu_host', '--health-file', 'health'],
+    )
+    with patch('hoymiles_mqtt.__main__.run_periodic_job'), patch('hoymiles_mqtt.__main__.HoymilesQueryJob') as job:
+        main()
+    assert job.call_args.kwargs['health_file'] == 'health'

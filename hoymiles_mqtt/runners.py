@@ -1,9 +1,10 @@
 """Runners."""
 
+import pathlib
 import signal
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from hoymiles_modbus.client import HoymilesModbusTCP
 from pymodbus import exceptions as pymodbus_exceptions
@@ -22,19 +23,28 @@ class HoymilesQueryJob:
 
     _lock = threading.Lock()
 
-    def __init__(self, mqtt_builder: HassMqtt, mqtt_publisher: MqttPublisher, modbus_client: HoymilesModbusTCP):
+    def __init__(
+        self,
+        mqtt_builder: HassMqtt,
+        mqtt_publisher: MqttPublisher,
+        modbus_client: HoymilesModbusTCP,
+        health_file: Optional[str] = None,
+    ):
         """Initialize the object.
 
         Arguments:
             mqtt_builder: an instance of MQTT message builder
             mqtt_publisher: an instance of MQTT publisher
             modbus_client: an instance of Modbus client
+            health_file: path to a file which is touched each time data is published (for health checks)
 
         """
         self._mqtt_builder: HassMqtt = mqtt_builder
         self._mqtt_publisher: MqttPublisher = mqtt_publisher
         self._modbus_client: HoymilesModbusTCP = modbus_client
         self._mqtt_configured: bool = False
+        self._reset_day: Optional[Tuple[int, int]] = None
+        self._health_file: Optional[str] = health_file
 
     def execute(self):
         """Get data from DTU and publish to MQTT broker."""
@@ -46,7 +56,9 @@ class HoymilesQueryJob:
             )
             return
         try:
-            if time.localtime().tm_hour == RESET_HOUR:
+            now = time.localtime()
+            if now.tm_hour == RESET_HOUR and self._reset_day != (now.tm_year, now.tm_yday):
+                self._reset_day = (now.tm_year, now.tm_yday)
                 self._mqtt_builder.clear_production_today()
                 logger.info("Reset hour reached")
 
@@ -99,10 +111,19 @@ class HoymilesQueryJob:
                         self._mqtt_publisher.broker,
                         self._mqtt_publisher.broker_port,
                     )
+                    self._touch_health_file()
             else:
                 logger.warning("No DTU data received!")
         finally:
             self._lock.release()
+
+    def _touch_health_file(self) -> None:
+        if not self._health_file:
+            return
+        try:
+            pathlib.Path(self._health_file).touch()
+        except OSError:
+            logger.exception("Failed to update health file %s", self._health_file)
 
 
 def run_periodic_job(period: int, job: Callable) -> None:

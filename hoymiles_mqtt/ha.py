@@ -1,6 +1,8 @@
 """MQTT message builders for Home Assistant."""
 
+import datetime
 import json
+import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -33,6 +35,13 @@ UNIT_WATS = 'W'
 UNIT_WATS_PER_HOUR = 'Wh'
 
 ZERO = 0
+
+CACHE_KEY_SEPARATOR = ':'
+
+MAX_PRODUCTION_STEP = 1000
+"""Maximum increase of port's production [Wh] between two readings, accepted without confirmation."""
+PRODUCTION_JUMP_CONFIRMATIONS = 3
+"""Number of consecutive readings needed to accept a bigger increase (for example after a long outage)."""
 
 
 def _ignore_when_zero(data, entity_name):
@@ -116,6 +125,7 @@ PortEntities = {
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
 }
@@ -150,7 +160,12 @@ class HassMqtt:
     """MQTT message builder for Home Assistant."""
 
     def __init__(
-        self, mi_entities: List[str], port_entities: List[str], post_process: bool = True, expire_after: int = 0
+        self,
+        mi_entities: List[str],
+        port_entities: List[str],
+        post_process: bool = True,
+        expire_after: int = 0,
+        cache_file: Optional[str] = None,
     ) -> None:
         """Initialize the object.
 
@@ -160,6 +175,8 @@ class HassMqtt:
             post_process: if to cache energy production
             expire_after: number of seconds after which an entity state should expire. This setting is added to the
                           entity configuration. Applied only when `expire` flag is set in the entity description.
+            cache_file: path to a file where cached energy production is stored, to survive restarts.
+                        When not given, the cache is kept only in memory.
 
         """
         self._logger = logger
@@ -169,6 +186,10 @@ class HassMqtt:
         self._expire_after: int = expire_after
         self._prod_today_cache: Dict[Tuple[str, int], int] = {}
         self._prod_total_cache: Dict[Tuple[str, int], int] = {}
+        self._published_total: int = ZERO
+        self._cache_file: Optional[str] = cache_file
+        self._saved_cache: Optional[Dict] = None
+        self._production_jumps: Dict[Tuple[str, str, int], int] = {}
         self._mi_entities: Dict[str, EntityDescription] = {}
         self._port_entities: Dict[str, EntityDescription] = {}
         for entity_name, description in MicroinverterEntities.items():
@@ -177,6 +198,59 @@ class HassMqtt:
         for entity_name, description in PortEntities.items():
             if entity_name in port_entities:
                 self._port_entities[entity_name] = description
+        if self._cache_file:
+            self._load_cache(self._cache_file)
+
+    @staticmethod
+    def _dump_cache(cache: Dict[Tuple[str, int], int]) -> Dict[str, int]:
+        return {f'{serial}{CACHE_KEY_SEPARATOR}{port}': value for (serial, port), value in cache.items()}
+
+    @staticmethod
+    def _parse_cache(cache: Dict[str, int]) -> Dict[Tuple[str, int], int]:
+        parsed = {}
+        for key, value in cache.items():
+            serial, port = key.rsplit(CACHE_KEY_SEPARATOR, 1)
+            parsed[(serial, int(port))] = int(value)
+        return parsed
+
+    def _load_cache(self, cache_file: str) -> None:
+        if not os.path.exists(cache_file):
+            return
+        try:
+            with open(cache_file, encoding='utf-8') as file:
+                content = json.load(file)
+            total_cache = self._parse_cache(content['total_production'])
+            today_cache = self._parse_cache(content['today_production'])
+            published_total = int(content['published_total_production'])
+            is_same_day = content['date'] == datetime.date.today().isoformat()
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            self._logger.exception(f'Failed to load production cache from {cache_file}. Ignoring the file.')
+            return
+        self._prod_total_cache = total_cache
+        self._published_total = published_total
+        if is_same_day:
+            self._prod_today_cache = today_cache
+
+    def _save_cache(self) -> None:
+        if not self._cache_file:
+            return
+        content = {
+            'date': datetime.date.today().isoformat(),
+            'today_production': self._dump_cache(self._prod_today_cache),
+            'total_production': self._dump_cache(self._prod_total_cache),
+            'published_total_production': self._published_total,
+        }
+        if content == self._saved_cache:
+            return
+        temporary_file = f'{self._cache_file}.tmp'
+        try:
+            with open(temporary_file, 'w', encoding='utf-8') as file:
+                json.dump(content, file)
+            os.replace(temporary_file, self._cache_file)
+        except OSError:
+            self._logger.exception(f'Failed to save production cache to {self._cache_file}.')
+            return
+        self._saved_cache = content
 
     @staticmethod
     def _get_config_topic(platform: str, device_serial: str, entity_name) -> str:
@@ -271,39 +345,78 @@ class HassMqtt:
         state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
 
+    def _update_production(self, microinverter, entity_name: str, cache: Dict[Tuple[str, int], int]) -> None:
+        """Update cached production with a new value, or replace a fault value with the cached one.
+
+        A value smaller than the cached one is a fault. A value much bigger than the cached one is accepted
+        only when confirmed by consecutive readings, to not publish a spike.
+
+        """
+        cache_key = (microinverter.serial_number, microinverter.port_number)
+        jump_key = (entity_name, *cache_key)
+        value = getattr(microinverter, entity_name)
+        cached_value = cache.get(cache_key)
+        description = f'{entity_name} for {microinverter.serial_number} port {microinverter.port_number}'
+        if cached_value is None or cached_value <= value <= cached_value + MAX_PRODUCTION_STEP:
+            cache[cache_key] = value
+            self._production_jumps.pop(jump_key, None)
+            return
+        if value < cached_value:
+            self._production_jumps.pop(jump_key, None)
+            self._logger.warning(
+                f'{description} is smaller ({value}) than cache ({cached_value}). Ignoring the fault value.'
+            )
+        else:
+            confirmations = self._production_jumps.get(jump_key, 0) + 1
+            if confirmations >= PRODUCTION_JUMP_CONFIRMATIONS:
+                self._logger.warning(f'{description} jumped from {cached_value} to {value}. Confirmed, accepted.')
+                cache[cache_key] = value
+                self._production_jumps.pop(jump_key, None)
+                return
+            self._production_jumps[jump_key] = confirmations
+            self._logger.warning(
+                f'{description} jumped from {cached_value} to {value}. Ignoring the value until confirmed.'
+            )
+        setattr(microinverter, entity_name, cached_value)
+
     def _update_cache(self, plant_data: 'PlantData') -> None:
         for microinverter in plant_data.inverters:
             cache_key = (microinverter.serial_number, microinverter.port_number)
-            if cache_key not in self._prod_today_cache:
-                self._prod_today_cache[cache_key] = ZERO
-            if cache_key not in self._prod_total_cache:
-                self._prod_total_cache[cache_key] = ZERO
             if microinverter.operating_status > 0:
-                if microinverter.today_production >= self._prod_today_cache[cache_key]:
-                    self._prod_today_cache[cache_key] = microinverter.today_production
-                else:
-                    self._logger.warning(
-                        f'Today production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.today_production} than cache '
-                        f'({self._prod_today_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
-                    )
-                    microinverter.today_production = self._prod_today_cache[cache_key]
-                if microinverter.total_production >= self._prod_total_cache[cache_key]:
-                    self._prod_total_cache[cache_key] = microinverter.total_production
-                else:
-                    self._logger.warning(
-                        f'Total production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.total_production} than cache '
-                        f'({self._prod_total_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
-                    )
-                    microinverter.total_production = self._prod_total_cache[cache_key]
+                self._update_production(microinverter, 'today_production', self._prod_today_cache)
+                self._update_production(microinverter, 'total_production', self._prod_total_cache)
+            else:
+                # data of an inverter which is off is not reliable, use the last known good values (if any)
+                microinverter.today_production = self._prod_today_cache.get(cache_key, ZERO)
+                microinverter.total_production = self._prod_total_cache.get(cache_key, ZERO)
 
     def _process_plant_data(self, plant_data: 'PlantData') -> None:
         self._update_cache(plant_data)
         plant_data.today_production = sum(self._prod_today_cache.values()) if self._prod_today_cache else ZERO
-        plant_data.total_production = sum(self._prod_total_cache.values()) if self._prod_total_cache else ZERO
+        plant_data.total_production = self._get_total_production(plant_data)
+        self._save_cache()
+
+    def _get_total_production(self, plant_data: 'PlantData') -> int:
+        """Get lifetime production of the plant, or zero (not published) when it is not reliable."""
+        missing_ports = [
+            f'{microinverter.serial_number} port {microinverter.port_number}'
+            for microinverter in plant_data.inverters
+            if (microinverter.serial_number, microinverter.port_number) not in self._prod_total_cache
+        ]
+        if missing_ports:
+            self._logger.info(
+                f'Total production is not published until valid data is received from: {", ".join(missing_ports)}.'
+            )
+            return ZERO
+        total_production = sum(self._prod_total_cache.values())
+        if total_production < self._published_total:
+            self._logger.warning(
+                f'Total production ({total_production}) is smaller than the last published one '
+                f'({self._published_total}). Not publishing.'
+            )
+            return ZERO
+        self._published_total = total_production
+        return total_production
 
     def get_states(self, plant_data: 'PlantData') -> Iterable[Tuple[str, str]]:
         """Get MQTT message for DTU data.
