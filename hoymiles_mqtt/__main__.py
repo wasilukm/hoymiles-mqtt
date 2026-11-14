@@ -114,8 +114,8 @@ def _parse_args() -> argparse.Namespace:
         env_var='EXPIRE_AFTER',
         help=(
             "Defines number of seconds after which DTU or microinverter entities expire, if updates are not received "
-            "(for example due to communication issues). After expiry, entities become unavailable in Home Assistant."
-            "By default it is 0, which means that entities never expire. When different than 0, the value shall"
+            "(for example due to communication issues). After expiry, entities become unavailable in Home Assistant. "
+            "By default it is 0, which means that entities never expire. When different than 0, the value shall "
             "be greater than the query period. This setting does not apply to entities that represent a total amount "
             "such as daily energy production (they never expire)."
         ),
@@ -200,7 +200,7 @@ def main():
     modbus_client.comm_params.timeout = options.comm_timeout
     modbus_client.comm_params.retries = options.comm_retries
     modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay
-    modbus_client.comm_params.reconnect_delay = options.comm_reconnect_delay_max
+    modbus_client.comm_params.reconnect_delay_max = options.comm_reconnect_delay_max
 
     mqtt_publisher = MqttPublisher(
         mqtt_broker=options.mqtt_broker,
