@@ -93,7 +93,8 @@ the `--cache-file` option.
                                     [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
                                     [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]]
                                     [--expire-after EXPIRE_AFTER] [--cache-file CACHE_FILE]
-                                    [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES]
+                                    [--health-file HEALTH_FILE] [--comm-timeout COMM_TIMEOUT]
+                                    [--comm-retries COMM_RETRIES]
                                     [--comm-reconnect-delay COMM_RECONNECT_DELAY]
                                     [--comm-reconnect-delay-max COMM_RECONNECT_DELAY_MAX]
                                     [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
@@ -146,6 +147,10 @@ the `--cache-file` option.
                             keep correct DTU energy production after a restart of the tool. In Docker,
                             the file shall be placed on a volume. By default the cache is kept only in
                             memory. [env var: CACHE_FILE] (default: None)
+      --health-file HEALTH_FILE
+                            Path to a file which is touched each time data is published to MQTT. Its
+                            modification time can be checked by a health check (for example in Docker).
+                            By default no file is used. [env var: HEALTH_FILE] (default: None)
       --comm-timeout COMM_TIMEOUT
                             Additional low level modbus communication parameter - request timeout. [env
                             var: COMM_TIMEOUT] (default: 3)
@@ -197,9 +202,12 @@ For example to enable logging to console with DEBUG logging level:
 The image installs dependencies in versions pinned by `poetry.lock`, so rebuilding it does not silently
 upgrade them.
 
+The container runs as a regular user (UID 1000). It reports itself unhealthy when no data was published
+to MQTT during the last 3 query periods (for example when DTU or MQTT broker is not reachable).
+
 In the container, the cached energy production is stored in `/data/cache.json` (see `--cache-file`).
 To keep it also when the container is recreated (for example on an image update), mount a named volume
-at `/data`:
+at `/data` (a host directory mounted there instead shall be writable by UID 1000):
 
     docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -v hoymiles_mqtt_data:/data hoymiles_mqtt
 
