@@ -382,14 +382,12 @@ class HassMqtt:
     def _update_cache(self, plant_data: 'PlantData') -> None:
         for microinverter in plant_data.inverters:
             cache_key = (microinverter.serial_number, microinverter.port_number)
-            if cache_key not in self._prod_today_cache:
-                self._prod_today_cache[cache_key] = ZERO
             if microinverter.operating_status > 0:
                 self._update_production(microinverter, 'today_production', self._prod_today_cache)
                 self._update_production(microinverter, 'total_production', self._prod_total_cache)
             else:
                 # data of an inverter which is off is not reliable, use the last known good values (if any)
-                microinverter.today_production = self._prod_today_cache[cache_key]
+                microinverter.today_production = self._prod_today_cache.get(cache_key, ZERO)
                 microinverter.total_production = self._prod_total_cache.get(cache_key, ZERO)
 
     def _process_plant_data(self, plant_data: 'PlantData') -> None:

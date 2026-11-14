@@ -426,3 +426,12 @@ def test_production_small_increase_accepted():
     plant_data.inverters[0].total_production += MAX_PRODUCTION_STEP
     states = list(ha.get_states(plant_data))
     assert json.loads(states[0][1])['total_production'] == 8844 + MAX_PRODUCTION_STEP
+
+
+def test_production_big_first_value_accepted():
+    """Verify that a big value is accepted without confirmation when no value is known yet (start at midday)."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    plant_data = get_example_data()
+    plant_data.inverters[0].today_production = MAX_PRODUCTION_STEP + 500
+    states = list(ha.get_states(plant_data))
+    assert json.loads(states[0][1])['today_production'] == MAX_PRODUCTION_STEP + 500
