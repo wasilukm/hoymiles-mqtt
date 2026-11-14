@@ -120,6 +120,7 @@ PortEntities = {
         device_class=DEVICE_CLASS_ENERGY,
         unit=UNIT_WATS_PER_HOUR,
         state_class=STATE_CLASS_TOTAL_INCREASING,
+        ignore_rule=_ignore_when_zero,
         expire=False,
     ),
 }
@@ -366,6 +367,9 @@ class HassMqtt:
                         f'Ignoring the fault value.'
                     )
                     microinverter.total_production = self._prod_total_cache[cache_key]
+            else:
+                # data of an inverter which is off is not reliable, use the last known good value (if any)
+                microinverter.total_production = self._prod_total_cache.get(cache_key, ZERO)
 
     def _process_plant_data(self, plant_data: 'PlantData') -> None:
         self._update_cache(plant_data)

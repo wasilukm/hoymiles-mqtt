@@ -345,3 +345,20 @@ def test_total_production_never_lower_than_published(tmp_path):
 
     states = list(ha.get_states(get_two_port_data()))
     assert json.loads(states[0][1])['total_production'] == 9844
+
+
+def test_port_total_production_when_inverter_is_off():
+    """Verify that the last known port total production is published when the inverter is off."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    list(ha.get_states(get_example_data()))
+    states = list(ha.get_states(get_sleeping_data(get_example_data())))
+    assert json.loads(states[2][1])['total_production'] == 8844
+
+
+def test_port_total_production_unknown_when_inverter_is_off():
+    """Verify that port total production is not published when the inverter is off and no value is known."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    plant_data = get_example_data()
+    plant_data.inverters[0].operating_status = 0
+    states = list(ha.get_states(plant_data))
+    assert 'total_production' not in json.loads(states[2][1])

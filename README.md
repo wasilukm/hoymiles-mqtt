@@ -62,6 +62,8 @@ than 0: grid_voltage, grid_frequency, temperature, pv_voltage, pv_current, pv_po
 Additionally, today_production and total_production are updated only when the inverter's
 operating status is greater than 0 and the new value is greater than the previous one.
 This is to prevent drops in measurements which shall be only increasing.
+When the inverter's operating status is 0, the last known good value of port's total_production is sent
+(or nothing when the value is not known yet).
 
 DTU's total_production is a sum of the last known good values of all inverters' ports. It is published
 only when every port reported by DTU has a known value, and never when it would be lower than the
