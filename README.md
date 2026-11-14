@@ -21,6 +21,9 @@ The tool periodically communicates with Hoymiles DTU (Pro) through ModbusTCP and
 Data to MQTT broker are sent with topics that can be recognized by Home Assistant.
 In a result DTU and each inverter can be represented in Home Assistant as separate device with a set of entities. Example:
 
+Home Assistant discovery messages are sent (retained) with the first data from DTU and then repeated
+every 10 minutes, so entities are restored when the MQTT broker lost its retained messages.
+
 ![MQTT Devices](/docs/mqtt_devices.png)
 
 ![MQTT Entities](/docs/mqtt_entities.png)

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import pytest
 from pymodbus.exceptions import ModbusIOException
 
-from hoymiles_mqtt.runners import RESET_HOUR, HoymilesQueryJob
+from hoymiles_mqtt.runners import CONFIG_PUBLISH_PERIOD_SEC, RESET_HOUR, HoymilesQueryJob
 
 
 @pytest.fixture
@@ -51,10 +51,34 @@ def test_execute_first_run_publishes_configs_and_states(mqtt_builder, mqtt_publi
 def test_execute_subsequent_run_only_publishes_states(mqtt_builder, mqtt_publisher, modbus_client):
     """Tests if, on subsequent executions, only states are published without re-publishing configurations."""
     job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client)
-    job.execute()
+    with patch("time.monotonic", return_value=1000.0):
+        job.execute()
+    with patch("time.monotonic", return_value=1000.0 + CONFIG_PUBLISH_PERIOD_SEC - 1):
+        job.execute()
     mqtt_builder.get_configs.assert_called_once_with(plant_data=modbus_client.plant_data)
-    mqtt_builder.get_states.assert_called_once_with(plant_data=modbus_client.plant_data)
+    assert mqtt_builder.get_states.call_count == 2
     mqtt_publisher.schedule_publish.assert_called()
+
+
+def test_execute_republishes_configs_periodically(mqtt_builder, mqtt_publisher, modbus_client):
+    """Tests if configurations are published again after the configuration publish period."""
+    job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client)
+    with patch("time.monotonic", return_value=1000.0):
+        job.execute()
+    with patch("time.monotonic", return_value=1000.0 + CONFIG_PUBLISH_PERIOD_SEC):
+        job.execute()
+    assert mqtt_builder.get_configs.call_count == 2
+    assert mqtt_builder.get_states.call_count == 2
+
+
+def test_execute_republishes_configs_after_publish_failure(mqtt_builder, mqtt_publisher, modbus_client):
+    """Tests if configurations are published again when the previous publish failed."""
+    job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client)
+    mqtt_publisher.schedule_publish.return_value.__exit__.side_effect = ConnectionRefusedError
+    job.execute()
+    mqtt_publisher.schedule_publish.return_value.__exit__.side_effect = None
+    job.execute()
+    assert mqtt_builder.get_configs.call_count == 2
 
 
 def test_execute_no_plant_data(mqtt_builder, mqtt_publisher, modbus_client):
