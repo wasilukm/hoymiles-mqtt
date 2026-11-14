@@ -47,6 +47,8 @@ toml = {version = "^0.10.2", optional = true}
 bump2version = {version = "^1.0.1", optional = true}
 paho-mqtt = "^2.1.0"
 hoymiles-modbus = "^0.10.0"
+# pymodbus 3.16.2 renamed ModbusPDU.encode() used by hoymiles-modbus 0.10.0
+pymodbus = ">=3.11.0,<3.16.2"
 ConfigArgParse = "^1.5.3"
 
 [tool.poetry.extras]
