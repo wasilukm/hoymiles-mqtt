@@ -3,7 +3,7 @@
 import signal
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from hoymiles_modbus.client import HoymilesModbusTCP
 from pymodbus import exceptions as pymodbus_exceptions
@@ -35,6 +35,7 @@ class HoymilesQueryJob:
         self._mqtt_publisher: MqttPublisher = mqtt_publisher
         self._modbus_client: HoymilesModbusTCP = modbus_client
         self._mqtt_configured: bool = False
+        self._reset_day: Optional[Tuple[int, int]] = None
 
     def execute(self):
         """Get data from DTU and publish to MQTT broker."""
@@ -46,7 +47,9 @@ class HoymilesQueryJob:
             )
             return
         try:
-            if time.localtime().tm_hour == RESET_HOUR:
+            now = time.localtime()
+            if now.tm_hour == RESET_HOUR and self._reset_day != (now.tm_year, now.tm_yday):
+                self._reset_day = (now.tm_year, now.tm_yday)
                 self._mqtt_builder.clear_production_today()
                 logger.info("Reset hour reached")
 
