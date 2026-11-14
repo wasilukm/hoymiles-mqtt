@@ -368,7 +368,8 @@ class HassMqtt:
                     )
                     microinverter.total_production = self._prod_total_cache[cache_key]
             else:
-                # data of an inverter which is off is not reliable, use the last known good value (if any)
+                # data of an inverter which is off is not reliable, use the last known good values (if any)
+                microinverter.today_production = self._prod_today_cache[cache_key]
                 microinverter.total_production = self._prod_total_cache.get(cache_key, ZERO)
 
     def _process_plant_data(self, plant_data: 'PlantData') -> None:

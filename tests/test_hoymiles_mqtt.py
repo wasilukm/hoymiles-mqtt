@@ -362,3 +362,17 @@ def test_port_total_production_unknown_when_inverter_is_off():
     plant_data.inverters[0].operating_status = 0
     states = list(ha.get_states(plant_data))
     assert 'total_production' not in json.loads(states[2][1])
+
+
+def test_port_today_production_when_inverter_is_off():
+    """Verify that the last known port today production is published when the inverter is off."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    list(ha.get_states(get_example_data()))
+    states = list(ha.get_states(get_sleeping_data(get_example_data())))
+    assert json.loads(states[2][1])['today_production'] == 431
+
+    ha.clear_production_today()
+    plant_data = get_example_data()
+    plant_data.inverters[0].operating_status = 0
+    states = list(ha.get_states(plant_data))
+    assert json.loads(states[2][1])['today_production'] == 0
