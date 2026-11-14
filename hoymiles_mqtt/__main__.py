@@ -121,6 +121,18 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     cfg_parser.add(
+        '--cache-file',
+        required=False,
+        type=str,
+        default=None,
+        env_var='CACHE_FILE',
+        help=(
+            "Path to a file where the cached energy production is stored. It allows to keep correct DTU energy "
+            "production after a restart of the tool. In Docker, the file shall be placed on a volume. "
+            "By default the cache is kept only in memory."
+        ),
+    )
+    cfg_parser.add(
         '--comm-timeout',
         required=False,
         type=int,
@@ -190,7 +202,10 @@ def main():
     options = _parse_args()
     _setup_logger(options)
     mqtt_builder = HassMqtt(
-        mi_entities=options.mi_entities, port_entities=options.port_entities, expire_after=options.expire_after
+        mi_entities=options.mi_entities,
+        port_entities=options.port_entities,
+        expire_after=options.expire_after,
+        cache_file=options.cache_file,
     )
     modbus_client = HoymilesModbusTCP(
         host=options.dtu_host,

@@ -63,6 +63,16 @@ Additionally, today_production and total_production are updated only when the in
 operating status is greater than 0 and the new value is greater than the previous one.
 This is to prevent drops in measurements which shall be only increasing.
 
+DTU's total_production is a sum of the last known good values of all inverters' ports. It is published
+only when every port reported by DTU has a known value, and never when it would be lower than the
+previously published one. Otherwise, a partial sum (for example in the morning, when inverters wake up one
+after another) would be interpreted by Home Assistant as a reset of the meter, and would add the whole
+lifetime production to the statistics.
+
+By default, the last known good values are kept only in memory, so after a restart of the tool
+total_production is not available until all inverters are on-line. To keep the values between restarts, use
+the `--cache-file` option.
+
 ## Usage
 
 ### Prerequisites
@@ -78,8 +88,8 @@ This is to prevent drops in measurements which shall be only increasing.
                                     [--modbus-unit-id MODBUS_UNIT_ID] [--query-period QUERY_PERIOD]
                                     [--mi-entities MI_ENTITIES [MI_ENTITIES ...]]
                                     [--port-entities PORT_ENTITIES [PORT_ENTITIES ...]]
-                                    [--expire-after EXPIRE_AFTER] [--comm-timeout COMM_TIMEOUT]
-                                    [--comm-retries COMM_RETRIES]
+                                    [--expire-after EXPIRE_AFTER] [--cache-file CACHE_FILE]
+                                    [--comm-timeout COMM_TIMEOUT] [--comm-retries COMM_RETRIES]
                                     [--comm-reconnect-delay COMM_RECONNECT_DELAY]
                                     [--comm-reconnect-delay-max COMM_RECONNECT_DELAY_MAX]
                                     [--log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
@@ -127,6 +137,11 @@ This is to prevent drops in measurements which shall be only increasing.
                             shallbe greater than the query period. This setting does not apply to
                             entities that represent a total amount such as daily energy production (they
                             never expire). [env var: EXPIRE_AFTER] (default: 0)
+      --cache-file CACHE_FILE
+                            Path to a file where the cached energy production is stored. It allows to
+                            keep correct DTU energy production after a restart of the tool. In Docker,
+                            the file shall be placed on a volume. By default the cache is kept only in
+                            memory. [env var: CACHE_FILE] (default: None)
       --comm-timeout COMM_TIMEOUT
                             Additional low level modbus communication parameter - request timeout. [env
                             var: COMM_TIMEOUT] (default: 3)
@@ -174,6 +189,24 @@ For example to enable logging to console with DEBUG logging level:
     docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -e LOG_LEVEL=DEBUG -e LOG_TO_CONSOLE=true hoymiles_mqtt
 
 > **_NOTE:_**  DEBUG level is very verbose, so should be used only for troubleshooting.
+
+To keep the cached energy production between restarts of the container, store the cache file on a volume:
+
+    docker run -d -e MQTT_BROKER=192.168.1.101 -e DTU_HOST=192.168.1.100 -e CACHE_FILE=/data/cache.json -v hoymiles_mqtt_data:/data hoymiles_mqtt
+
+or in Docker Compose:
+
+    services:
+      hoymiles-mqtt:
+        image: hoymiles_mqtt
+        environment:
+          MQTT_BROKER: 192.168.1.101
+          DTU_HOST: 192.168.1.100
+          CACHE_FILE: /data/cache.json
+        volumes:
+          - hoymiles_mqtt_data:/data
+    volumes:
+      hoymiles_mqtt_data:
 
 ## Troubleshooting
 

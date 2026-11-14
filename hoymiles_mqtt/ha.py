@@ -1,6 +1,8 @@
 """MQTT message builders for Home Assistant."""
 
+import datetime
 import json
+import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -33,6 +35,8 @@ UNIT_WATS = 'W'
 UNIT_WATS_PER_HOUR = 'Wh'
 
 ZERO = 0
+
+CACHE_KEY_SEPARATOR = ':'
 
 
 def _ignore_when_zero(data, entity_name):
@@ -150,7 +154,12 @@ class HassMqtt:
     """MQTT message builder for Home Assistant."""
 
     def __init__(
-        self, mi_entities: List[str], port_entities: List[str], post_process: bool = True, expire_after: int = 0
+        self,
+        mi_entities: List[str],
+        port_entities: List[str],
+        post_process: bool = True,
+        expire_after: int = 0,
+        cache_file: Optional[str] = None,
     ) -> None:
         """Initialize the object.
 
@@ -160,6 +169,8 @@ class HassMqtt:
             post_process: if to cache energy production
             expire_after: number of seconds after which an entity state should expire. This setting is added to the
                           entity configuration. Applied only when `expire` flag is set in the entity description.
+            cache_file: path to a file where cached energy production is stored, to survive restarts.
+                        When not given, the cache is kept only in memory.
 
         """
         self._logger = logger
@@ -169,6 +180,9 @@ class HassMqtt:
         self._expire_after: int = expire_after
         self._prod_today_cache: Dict[Tuple[str, int], int] = {}
         self._prod_total_cache: Dict[Tuple[str, int], int] = {}
+        self._published_total: int = ZERO
+        self._cache_file: Optional[str] = cache_file
+        self._saved_cache: Optional[Dict] = None
         self._mi_entities: Dict[str, EntityDescription] = {}
         self._port_entities: Dict[str, EntityDescription] = {}
         for entity_name, description in MicroinverterEntities.items():
@@ -177,6 +191,59 @@ class HassMqtt:
         for entity_name, description in PortEntities.items():
             if entity_name in port_entities:
                 self._port_entities[entity_name] = description
+        if self._cache_file:
+            self._load_cache(self._cache_file)
+
+    @staticmethod
+    def _dump_cache(cache: Dict[Tuple[str, int], int]) -> Dict[str, int]:
+        return {f'{serial}{CACHE_KEY_SEPARATOR}{port}': value for (serial, port), value in cache.items()}
+
+    @staticmethod
+    def _parse_cache(cache: Dict[str, int]) -> Dict[Tuple[str, int], int]:
+        parsed = {}
+        for key, value in cache.items():
+            serial, port = key.rsplit(CACHE_KEY_SEPARATOR, 1)
+            parsed[(serial, int(port))] = int(value)
+        return parsed
+
+    def _load_cache(self, cache_file: str) -> None:
+        if not os.path.exists(cache_file):
+            return
+        try:
+            with open(cache_file, encoding='utf-8') as file:
+                content = json.load(file)
+            total_cache = self._parse_cache(content['total_production'])
+            today_cache = self._parse_cache(content['today_production'])
+            published_total = int(content['published_total_production'])
+            is_same_day = content['date'] == datetime.date.today().isoformat()
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            self._logger.exception(f'Failed to load production cache from {cache_file}. Ignoring the file.')
+            return
+        self._prod_total_cache = total_cache
+        self._published_total = published_total
+        if is_same_day:
+            self._prod_today_cache = today_cache
+
+    def _save_cache(self) -> None:
+        if not self._cache_file:
+            return
+        content = {
+            'date': datetime.date.today().isoformat(),
+            'today_production': self._dump_cache(self._prod_today_cache),
+            'total_production': self._dump_cache(self._prod_total_cache),
+            'published_total_production': self._published_total,
+        }
+        if content == self._saved_cache:
+            return
+        temporary_file = f'{self._cache_file}.tmp'
+        try:
+            with open(temporary_file, 'w', encoding='utf-8') as file:
+                json.dump(content, file)
+            os.replace(temporary_file, self._cache_file)
+        except OSError:
+            self._logger.exception(f'Failed to save production cache to {self._cache_file}.')
+            return
+        self._saved_cache = content
 
     @staticmethod
     def _get_config_topic(platform: str, device_serial: str, entity_name) -> str:
@@ -276,9 +343,9 @@ class HassMqtt:
             cache_key = (microinverter.serial_number, microinverter.port_number)
             if cache_key not in self._prod_today_cache:
                 self._prod_today_cache[cache_key] = ZERO
-            if cache_key not in self._prod_total_cache:
-                self._prod_total_cache[cache_key] = ZERO
             if microinverter.operating_status > 0:
+                if cache_key not in self._prod_total_cache:
+                    self._prod_total_cache[cache_key] = ZERO
                 if microinverter.today_production >= self._prod_today_cache[cache_key]:
                     self._prod_today_cache[cache_key] = microinverter.today_production
                 else:
@@ -303,7 +370,30 @@ class HassMqtt:
     def _process_plant_data(self, plant_data: 'PlantData') -> None:
         self._update_cache(plant_data)
         plant_data.today_production = sum(self._prod_today_cache.values()) if self._prod_today_cache else ZERO
-        plant_data.total_production = sum(self._prod_total_cache.values()) if self._prod_total_cache else ZERO
+        plant_data.total_production = self._get_total_production(plant_data)
+        self._save_cache()
+
+    def _get_total_production(self, plant_data: 'PlantData') -> int:
+        """Get lifetime production of the plant, or zero (not published) when it is not reliable."""
+        missing_ports = [
+            f'{microinverter.serial_number} port {microinverter.port_number}'
+            for microinverter in plant_data.inverters
+            if (microinverter.serial_number, microinverter.port_number) not in self._prod_total_cache
+        ]
+        if missing_ports:
+            self._logger.info(
+                f'Total production is not published until valid data is received from: {", ".join(missing_ports)}.'
+            )
+            return ZERO
+        total_production = sum(self._prod_total_cache.values())
+        if total_production < self._published_total:
+            self._logger.warning(
+                f'Total production ({total_production}) is smaller than the last published one '
+                f'({self._published_total}). Not publishing.'
+            )
+            return ZERO
+        self._published_total = total_production
+        return total_production
 
     def get_states(self, plant_data: 'PlantData') -> Iterable[Tuple[str, str]]:
         """Get MQTT message for DTU data.

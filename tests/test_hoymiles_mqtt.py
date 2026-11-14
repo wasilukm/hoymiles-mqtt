@@ -227,3 +227,121 @@ def test_production_drop():
         '{"pv_voltage": 1.234, "pv_current": 2.34, "pv_power": 40.31, "today_production": 431, '
         '"total_production": 8844}',
     )
+
+
+def get_two_port_data() -> PlantData:
+    """Create example PlantData with two ports."""
+    plant_data = get_example_data()
+    second_port = get_example_data().inverters[0]
+    second_port.port_number = 4
+    second_port.today_production = 100
+    second_port.total_production = 1000
+    plant_data.inverters.append(second_port)
+    return plant_data
+
+
+def get_sleeping_data(plant_data: PlantData) -> PlantData:
+    """Make all inverters look like at night (no valid data)."""
+    for inverter in plant_data.inverters:
+        inverter.operating_status = 0
+        inverter.today_production = 0
+        inverter.total_production = 0
+    return plant_data
+
+
+def test_cache_survives_restart(tmp_path):
+    """Verify that cached production is restored from the cache file after a restart."""
+    cache_file = tmp_path / 'cache.json'
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    list(ha.get_states(get_two_port_data()))
+    assert [path.name for path in tmp_path.iterdir()] == ['cache.json']
+
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    states = list(ha.get_states(get_sleeping_data(get_two_port_data())))
+    assert json.loads(states[0][1]) == {
+        'pv_power': 0.0,
+        'today_production': 531,
+        'total_production': 9844,
+        'alarm_flag': 'OFF',
+    }
+
+
+def test_cache_restart_inverters_wake_up_one_by_one(tmp_path):
+    """Verify that total production does not drop when inverters wake up one after another after a restart."""
+    cache_file = tmp_path / 'cache.json'
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    list(ha.get_states(get_two_port_data()))
+
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    plant_data = get_sleeping_data(get_two_port_data())
+    plant_data.inverters[0].operating_status = 3
+    plant_data.inverters[0].total_production = 8850
+    states = list(ha.get_states(plant_data))
+    assert json.loads(states[0][1])['total_production'] == 9850
+
+
+def test_cache_today_production_dropped_on_new_day(tmp_path):
+    """Verify that today production from the cache file is ignored when saved on another day."""
+    cache_file = tmp_path / 'cache.json'
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    list(ha.get_states(get_two_port_data()))
+    content = json.loads(cache_file.read_text())
+    content['date'] = '2000-01-01'
+    cache_file.write_text(json.dumps(content))
+
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    states = list(ha.get_states(get_sleeping_data(get_two_port_data())))
+    assert json.loads(states[0][1]) == {'pv_power': 0.0, 'total_production': 9844, 'alarm_flag': 'OFF'}
+
+
+def test_cache_clear_production_today_is_saved(tmp_path):
+    """Verify that clearing today production is reflected in the cache file."""
+    cache_file = tmp_path / 'cache.json'
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    list(ha.get_states(get_two_port_data()))
+    ha.clear_production_today()
+    list(ha.get_states(get_sleeping_data(get_two_port_data())))
+
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    states = list(ha.get_states(get_sleeping_data(get_two_port_data())))
+    assert json.loads(states[0][1]) == {'pv_power': 0.0, 'total_production': 9844, 'alarm_flag': 'OFF'}
+
+
+def test_cache_file_corrupted(tmp_path):
+    """Verify that a corrupted cache file is ignored and then overwritten."""
+    cache_file = tmp_path / 'cache.json'
+    cache_file.write_text('{not a json')
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    states = list(ha.get_states(get_two_port_data()))
+    assert json.loads(states[0][1])['total_production'] == 9844
+    assert json.loads(cache_file.read_text())['total_production'] == {'102162804827:3': 8844, '102162804827:4': 1000}
+
+
+def test_total_production_not_published_until_all_ports_reported():
+    """Verify that DTU total production is withheld until every port reported a valid value."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    plant_data = get_two_port_data()
+    plant_data.inverters[1].operating_status = 0
+    states = list(ha.get_states(plant_data))
+    assert json.loads(states[0][1]) == {'pv_power': 0.0, 'today_production': 431, 'alarm_flag': 'OFF'}
+
+    states = list(ha.get_states(get_two_port_data()))
+    assert json.loads(states[0][1])['total_production'] == 9844
+
+
+def test_total_production_never_lower_than_published(tmp_path):
+    """Verify that DTU total production lower than the last published one is not published."""
+    cache_file = tmp_path / 'cache.json'
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    list(ha.get_states(get_two_port_data()))
+    content = json.loads(cache_file.read_text())
+    assert content['published_total_production'] == 9844
+    content['total_production']['102162804827:4'] = 10
+    cache_file.write_text(json.dumps(content))
+
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES, cache_file=str(cache_file))
+    states = list(ha.get_states(get_sleeping_data(get_two_port_data())))
+    assert 'total_production' not in json.loads(states[0][1])
+
+    states = list(ha.get_states(get_two_port_data()))
+    assert json.loads(states[0][1])['total_production'] == 9844
