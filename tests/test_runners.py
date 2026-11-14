@@ -104,3 +104,18 @@ def test_execute_does_not_call_clear_production_today_outside_reset_hour(mqtt_bu
         job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client)
         job.execute()
         mqtt_builder.clear_production_today.assert_not_called()
+
+
+def test_execute_reset_hour_clears_once_per_day(mqtt_builder, mqtt_publisher, modbus_client):
+    """Tests that during RESET_HOUR, the clear_production_today method is called only once per day."""
+    job = HoymilesQueryJob(mqtt_builder, mqtt_publisher, modbus_client)
+    with patch("time.localtime") as mock_localtime:
+        mock_localtime.return_value.tm_hour = RESET_HOUR
+        mock_localtime.return_value.tm_year = 2026
+        mock_localtime.return_value.tm_yday = 318
+        job.execute()
+        job.execute()
+        mqtt_builder.clear_production_today.assert_called_once()
+        mock_localtime.return_value.tm_yday = 319
+        job.execute()
+        assert mqtt_builder.clear_production_today.call_count == 2
