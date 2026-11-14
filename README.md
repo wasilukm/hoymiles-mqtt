@@ -62,6 +62,8 @@ than 0: grid_voltage, grid_frequency, temperature, pv_voltage, pv_current, pv_po
 Additionally, today_production and total_production are updated only when the inverter's
 operating status is greater than 0 and the new value is greater than the previous one.
 This is to prevent drops in measurements which shall be only increasing.
+An increase bigger than 1000 Wh between two readings is accepted only when it is confirmed by 3 consecutive
+readings, so a single fault value from DTU is not published.
 When the inverter's operating status is 0, the last known good values of port's today_production and
 total_production are sent (or nothing for total_production when the value is not known yet).
 

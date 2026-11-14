@@ -5,7 +5,7 @@ import json
 from hoymiles_modbus.datatypes import InverterData, PlantData
 
 from hoymiles_mqtt import MI_ENTITIES, PORT_ENTITIES
-from hoymiles_mqtt.ha import HassMqtt
+from hoymiles_mqtt.ha import MAX_PRODUCTION_STEP, PRODUCTION_JUMP_CONFIRMATIONS, HassMqtt
 
 
 def get_example_data() -> PlantData:
@@ -376,3 +376,53 @@ def test_port_today_production_when_inverter_is_off():
     plant_data.inverters[0].operating_status = 0
     states = list(ha.get_states(plant_data))
     assert json.loads(states[2][1])['today_production'] == 0
+
+
+def test_production_jump_ignored_until_confirmed():
+    """Verify that a big jump in production is published only when confirmed by consecutive readings."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    list(ha.get_states(get_example_data()))
+
+    def get_jump_data():
+        plant_data = get_example_data()
+        plant_data.inverters[0].today_production += MAX_PRODUCTION_STEP + 1
+        plant_data.inverters[0].total_production += MAX_PRODUCTION_STEP + 1
+        return plant_data
+
+    for _ in range(PRODUCTION_JUMP_CONFIRMATIONS - 1):
+        states = list(ha.get_states(get_jump_data()))
+        assert json.loads(states[0][1])['today_production'] == 431
+        assert json.loads(states[0][1])['total_production'] == 8844
+        assert json.loads(states[2][1])['total_production'] == 8844
+
+    states = list(ha.get_states(get_jump_data()))
+    assert json.loads(states[0][1])['today_production'] == 431 + MAX_PRODUCTION_STEP + 1
+    assert json.loads(states[0][1])['total_production'] == 8844 + MAX_PRODUCTION_STEP + 1
+
+
+def test_production_jump_spike_discarded():
+    """Verify that a single spike in production is discarded and does not count for later jumps."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    list(ha.get_states(get_example_data()))
+
+    def get_spike_data():
+        plant_data = get_example_data()
+        plant_data.inverters[0].total_production = 4294967295
+        return plant_data
+
+    list(ha.get_states(get_spike_data()))
+    states = list(ha.get_states(get_example_data()))
+    assert json.loads(states[0][1])['total_production'] == 8844
+    for _ in range(PRODUCTION_JUMP_CONFIRMATIONS - 1):
+        states = list(ha.get_states(get_spike_data()))
+    assert json.loads(states[0][1])['total_production'] == 8844
+
+
+def test_production_small_increase_accepted():
+    """Verify that an increase up to the maximum step is accepted immediately."""
+    ha = HassMqtt(mi_entities=MI_ENTITIES, port_entities=PORT_ENTITIES)
+    list(ha.get_states(get_example_data()))
+    plant_data = get_example_data()
+    plant_data.inverters[0].total_production += MAX_PRODUCTION_STEP
+    states = list(ha.get_states(plant_data))
+    assert json.loads(states[0][1])['total_production'] == 8844 + MAX_PRODUCTION_STEP

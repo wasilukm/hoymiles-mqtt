@@ -38,6 +38,11 @@ ZERO = 0
 
 CACHE_KEY_SEPARATOR = ':'
 
+MAX_PRODUCTION_STEP = 1000
+"""Maximum increase of port's production [Wh] between two readings, accepted without confirmation."""
+PRODUCTION_JUMP_CONFIRMATIONS = 3
+"""Number of consecutive readings needed to accept a bigger increase (for example after a long outage)."""
+
 
 def _ignore_when_zero(data, entity_name):
     return getattr(data, entity_name) == ZERO
@@ -184,6 +189,7 @@ class HassMqtt:
         self._published_total: int = ZERO
         self._cache_file: Optional[str] = cache_file
         self._saved_cache: Optional[Dict] = None
+        self._production_jumps: Dict[Tuple[str, str, int], int] = {}
         self._mi_entities: Dict[str, EntityDescription] = {}
         self._port_entities: Dict[str, EntityDescription] = {}
         for entity_name, description in MicroinverterEntities.items():
@@ -339,34 +345,48 @@ class HassMqtt:
         state_topic = self._get_state_topic(device_serial, port)
         return state_topic, payload
 
+    def _update_production(self, microinverter, entity_name: str, cache: Dict[Tuple[str, int], int]) -> None:
+        """Update cached production with a new value, or replace a fault value with the cached one.
+
+        A value smaller than the cached one is a fault. A value much bigger than the cached one is accepted
+        only when confirmed by consecutive readings, to not publish a spike.
+
+        """
+        cache_key = (microinverter.serial_number, microinverter.port_number)
+        jump_key = (entity_name, *cache_key)
+        value = getattr(microinverter, entity_name)
+        cached_value = cache.get(cache_key)
+        description = f'{entity_name} for {microinverter.serial_number} port {microinverter.port_number}'
+        if cached_value is None or cached_value <= value <= cached_value + MAX_PRODUCTION_STEP:
+            cache[cache_key] = value
+            self._production_jumps.pop(jump_key, None)
+            return
+        if value < cached_value:
+            self._production_jumps.pop(jump_key, None)
+            self._logger.warning(
+                f'{description} is smaller ({value}) than cache ({cached_value}). Ignoring the fault value.'
+            )
+        else:
+            confirmations = self._production_jumps.get(jump_key, 0) + 1
+            if confirmations >= PRODUCTION_JUMP_CONFIRMATIONS:
+                self._logger.warning(f'{description} jumped from {cached_value} to {value}. Confirmed, accepted.')
+                cache[cache_key] = value
+                self._production_jumps.pop(jump_key, None)
+                return
+            self._production_jumps[jump_key] = confirmations
+            self._logger.warning(
+                f'{description} jumped from {cached_value} to {value}. Ignoring the value until confirmed.'
+            )
+        setattr(microinverter, entity_name, cached_value)
+
     def _update_cache(self, plant_data: 'PlantData') -> None:
         for microinverter in plant_data.inverters:
             cache_key = (microinverter.serial_number, microinverter.port_number)
             if cache_key not in self._prod_today_cache:
                 self._prod_today_cache[cache_key] = ZERO
             if microinverter.operating_status > 0:
-                if cache_key not in self._prod_total_cache:
-                    self._prod_total_cache[cache_key] = ZERO
-                if microinverter.today_production >= self._prod_today_cache[cache_key]:
-                    self._prod_today_cache[cache_key] = microinverter.today_production
-                else:
-                    self._logger.warning(
-                        f'Today production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.today_production} than cache '
-                        f'({self._prod_today_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
-                    )
-                    microinverter.today_production = self._prod_today_cache[cache_key]
-                if microinverter.total_production >= self._prod_total_cache[cache_key]:
-                    self._prod_total_cache[cache_key] = microinverter.total_production
-                else:
-                    self._logger.warning(
-                        f'Total production for {microinverter.serial_number} port {microinverter.port_number} '
-                        f'is smaller ({microinverter.total_production} than cache '
-                        f'({self._prod_total_cache[cache_key]}). '
-                        f'Ignoring the fault value.'
-                    )
-                    microinverter.total_production = self._prod_total_cache[cache_key]
+                self._update_production(microinverter, 'today_production', self._prod_today_cache)
+                self._update_production(microinverter, 'total_production', self._prod_total_cache)
             else:
                 # data of an inverter which is off is not reliable, use the last known good values (if any)
                 microinverter.today_production = self._prod_today_cache[cache_key]
