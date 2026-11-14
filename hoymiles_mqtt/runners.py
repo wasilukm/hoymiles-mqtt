@@ -3,7 +3,7 @@
 import signal
 import threading
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 from hoymiles_modbus.client import HoymilesModbusTCP
 from pymodbus import exceptions as pymodbus_exceptions
@@ -15,6 +15,7 @@ from hoymiles_mqtt.mqtt import MqttPublisher
 logger = _main_logger.getChild('runners')
 
 RESET_HOUR = 23
+CONFIG_PUBLISH_PERIOD_SEC = 600
 
 
 class HoymilesQueryJob:
@@ -34,7 +35,7 @@ class HoymilesQueryJob:
         self._mqtt_builder: HassMqtt = mqtt_builder
         self._mqtt_publisher: MqttPublisher = mqtt_publisher
         self._modbus_client: HoymilesModbusTCP = modbus_client
-        self._mqtt_configured: bool = False
+        self._config_publish_time: Optional[float] = None
 
     def execute(self):
         """Get data from DTU and publish to MQTT broker."""
@@ -67,8 +68,12 @@ class HoymilesQueryJob:
             if plant_data:
                 try:
                     # Publish configurations?
-                    # This is done only for the first data set
-                    if not self._mqtt_configured:
+                    # This is done for the first data set and then repeated periodically, to recover when
+                    # the MQTT broker lost retained messages or when a new inverter was added
+                    if (
+                        self._config_publish_time is None
+                        or time.monotonic() - self._config_publish_time >= CONFIG_PUBLISH_PERIOD_SEC
+                    ):
                         with self._mqtt_publisher.schedule_publish() as queue:
                             for topic, payload in self._mqtt_builder.get_configs(plant_data=plant_data):
                                 queue.add(topic=topic, payload=payload, retain=True)
@@ -78,7 +83,7 @@ class HoymilesQueryJob:
                                     self._mqtt_publisher.broker_port,
                                     topic,
                                 )
-                        self._mqtt_configured = True
+                        self._config_publish_time = time.monotonic()
                     # Publish data
                     with self._mqtt_publisher.schedule_publish() as queue:
                         for topic, payload in self._mqtt_builder.get_states(plant_data=plant_data):
